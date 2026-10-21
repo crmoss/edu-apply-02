@@ -2,6 +2,8 @@
 
 검토일: 2026-10-21 · 상태: 설계 제안, 미구현
 
+후속 구현 안내: 이 문서는 최초 검토 기록입니다. 현재 코드는 Vercel Functions + Supabase PostgreSQL, SMS 없는 자체 휴대폰 번호·비밀번호 인증으로 구현했습니다. 기존 제안과 다른 실제 스키마·연결·제약은 [DB_SETUP.md](DB_SETUP.md), [PRD.md](PRD.md), [PHONE_AUTH_PLAN.md](PHONE_AUTH_PLAN.md)를 우선 참고하세요. 운영 연결은 환경 변수 설정 및 배포 후 검증합니다.
+
 ## 1. 검토 결론
 
 기존 화면을 유지하면서 **Node.js API 서버 + 관리형 PostgreSQL + 사용자 로그인**을 추가하는 구성을 권장합니다. 화면 파일을 웹서버에 올리기만 하면 접속은 가능하지만, 현재의 localStorage 저장은 기기마다 분리되므로 온라인 DB 서비스가 되지는 않습니다.

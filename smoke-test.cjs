@@ -1,121 +1,64 @@
-// Node.js 내장 모듈만 사용한 규칙·이벤트·저장 흐름 점검. 실제 브라우저 화면 검증은 별도입니다.
-const fs=require('node:fs');
-const vm=require('node:vm');
-const path=require('node:path');
-const assert=require('node:assert/strict');
+// 실제 브라우저 대신 모의 DOM/API로 비동기 화면·계정 전환 흐름을 검증한다.
+const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path'),assert=require('node:assert/strict');
 const read=name=>fs.readFileSync(path.join(__dirname,name),'utf8');
-const ruleContext=vm.createContext({});
-vm.runInContext(read('logic.js')+'\n'+read('tests.js'),ruleContext);
-const results=vm.runInContext('testResults',ruleContext);
-for(const result of results)assert.equal(result.ok,true,result.label+': '+result.error);
-
-function boot({raw=null,failWrite=false}={}){
-  const nodes=new Map();
-  const events={};
-  const html=read('index.html');
-  for(const match of html.matchAll(/id="([^"]+)"/g)){
-    nodes.set(match[1],{
-      value:'',textContent:'',innerHTML:'',disabled:false,dataset:{},handlers:{},
-      classList:{add(){},remove(){},toggle(){}},
-      setAttribute(){},addEventListener(name,fn){this.handlers[name]=fn},
-      reset(){},focus(){},scrollIntoView(){},
-      showModal(){this.open=true},close(){this.open=false;this.handlers.close?.()}
-    });
-  }
-  nodes.get('categoryFilter').value='all';
-  nodes.get('category').value='work';
-  const values=new Map();
-  if(raw!==null)values.set('online-work-notebook.standalone.v1',raw);
-  const context=vm.createContext({
-    console,crypto:{randomUUID:()=>`test-${Math.random()}`},
-    document:{getElementById:id=>nodes.get(id),querySelectorAll:()=>[]},
-    window:{addEventListener:(name,fn)=>events[name]=fn},
-    localStorage:{getItem:key=>values.get(key)??null,setItem:(key,value)=>{if(failWrite)throw Error('quota');values.set(key,value)}}
-  });
-  vm.runInContext(read('logic.js')+'\n'+read('app.js')+'\n'+read('signup.js'),context);
-  return {nodes,values,run:code=>vm.runInContext(code,context)};
+async function main(){
+ const rules=vm.createContext({});vm.runInContext(read('logic.js')+'\n'+read('tests.js'),rules);
+ const results=vm.runInContext('testResults',rules);for(const r of results)assert.equal(r.ok,true,r.label);
+ const nodes=new Map();
+ for(const match of read('index.html').matchAll(/id="([^"]+)"/g))nodes.set(match[1],{
+  value:'',hidden:false,disabled:false,textContent:'',innerHTML:'',dataset:{},handlers:{},
+  classList:{add(){},remove(){},toggle(){}},setAttribute(){},focus(){},scrollIntoView(){},reset(){},
+  addEventListener(name,fn){this.handlers[name]=fn;},showModal(){this.open=true;},close(){this.open=false;this.handlers.close?.();}
+ });
+ nodes.get('categoryFilter').value='all';nodes.get('category').value='work';
+ let rows=[],signedIn=false,nextError=null;const calls=[];
+ const api={async request(action,body){
+  calls.push({action,body});if(nextError){const error=nextError;nextError=null;throw error;}
+  if(action==='session'){const e=new Error('로그인 필요');e.status=401;throw e;}
+  if(action==='signup'||action==='login'){signedIn=true;return {user:{id:'account-a',phone:'010-****-0000'}};}
+  if(action==='logout'){signedIn=false;return {ok:true};}
+  assert.ok(signedIn,'인증 뒤 API 접근');
+  if(action==='list')return {schedules:structuredClone(rows)};
+  if(action==='create'){const s={...body,version:1};rows.push(s);return {schedule:structuredClone(s)};}
+  if(action==='update'){const old=rows.find(r=>r.id===body.id);assert.equal(body.version,old.version);const s={...body,version:old.version+1};rows=rows.map(r=>r.id===s.id?s:r);return {schedule:structuredClone(s)};}
+  if(action==='delete'){rows=rows.filter(r=>r.id!==body.id);return {ok:true};}
+  if(action==='import')return {ok:true};throw Error(action);
+ }};
+ const legacy=[{id:'old',category:'work',date:'2026-10-21',start:'07:00',end:'07:30',content:'이전 일정'}];
+ const local=new Map([['online-work-notebook.standalone.v1',JSON.stringify(legacy)]]);
+ const ctx=vm.createContext({console,NotebookAPI:api,crypto:require('node:crypto').webcrypto,
+  document:{getElementById:id=>nodes.get(id),querySelectorAll:()=>[]},window:{addEventListener(){}},
+  localStorage:{getItem:key=>local.get(key)??null,setItem(){throw Error('온라인 모드에서 로컬 저장 금지');}}
+ });
+ vm.runInContext(read('logic.js')+'\n'+read('app.js')+'\n'+read('signup.js'),ctx);
+ const run=code=>vm.runInContext(code,ctx);await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(nodes.get('submitBtn').disabled,true,'로그인 전 저장 불가');
+ assert.equal(run('schedules.length'),0,'로컬 일정을 로그인 전 표시하지 않음');
+ nodes.get('openSignup').handlers.click();nodes.get('registerTab').onclick();
+ nodes.get('signupPhone').value='010-0000-0000';nodes.get('signupPassword').value='sample-password-123';nodes.get('signupPasswordConfirm').value='mismatch';
+ await nodes.get('signupForm').handlers.submit({preventDefault(){}});
+ assert.equal(calls.filter(c=>c.action==='signup').length,0,'비밀번호 확인 오류');
+ nodes.get('signupPasswordConfirm').value='sample-password-123';
+ await nodes.get('signupForm').handlers.submit({preventDefault(){}});
+ assert.equal(run('currentUser.id'),'account-a');assert.equal(nodes.get('submitBtn').disabled,false);
+ assert.equal(nodes.get('signupPassword').value,'','인증 후 비밀번호 지우기');
+ assert.equal(nodes.get('legacyImport').hidden,false,'기존 일정 가져오기 안내');
+ async function submit(content='오늘 일정',start='09:00',end='09:30'){
+  nodes.get('date').value=run('today()');nodes.get('category').value='work';nodes.get('content').value=content;
+  run(`setTime('start','${start}');setTime('end','${end}')`);await nodes.get('scheduleForm').handlers.submit({preventDefault(){}});
+ }
+ await submit();assert.equal(rows.length,1);assert.equal(nodes.get('upcomingCount').textContent,'1건');
+ assert.ok(nodes.get('upcomingList').innerHTML.includes('upcoming-work'));
+ await submit('중복');assert.equal(rows.length,1,'같은 시간 등록 거부');
+ nodes.get('upcomingList').handlers.click({target:{closest:()=>({dataset:{edit:rows[0].id}})}});
+ await submit('수정 일정','10:00','10:30');assert.equal(rows[0].content,'수정 일정');assert.equal(rows[0].version,2);
+ const error=new Error('저장 실패');error.status=503;nextError=error;
+ await submit('유지할 입력','11:00','11:30');assert.equal(rows.length,1);assert.equal(nodes.get('content').value,'유지할 입력');
+ nodes.get('monthView').onclick();nodes.get('categoryFilter').value='personal';nodes.get('categoryFilter').onchange();assert.equal(nodes.get('upcomingCount').textContent,'1건');
+ await nodes.get('importSchedules').onclick();assert.ok(calls.some(c=>c.action==='import'&&c.body.schedules.length===1));assert.equal(local.size,1);
+ nodes.get('upcomingList').handlers.click({target:{closest:()=>({dataset:{cancel:rows[0].id}})}});
+ await nodes.get('confirmCancel').onclick();assert.equal(rows.length,0);
+ await nodes.get('logoutButton').onclick();assert.equal(run('currentUser'),null);assert.equal(run('schedules.length'),0);assert.equal(nodes.get('submitBtn').disabled,true);
+ console.log(`PASS: ${results.length} rules; signup/login, password confirmation, DB CRUD, failure preservation, D-day colors, import, logout clearing.`);
 }
-const app=boot();
-function submit(content='가상 회의',start='09:00',end='09:30'){
-  app.nodes.get('date').value='2026-10-21';
-  app.nodes.get('content').value=content;
-  app.nodes.get('category').value='work';
-  app.run(`setTime('start','${start}');setTime('end','${end}')`);
-  app.nodes.get('scheduleForm').handlers.submit({preventDefault(){}});
-}
-submit();
-assert.equal(app.run('schedules.length'),1,'일정 등록');
-submit('겹치는 회의');
-assert.equal(app.run('schedules.length'),1,'중복 등록 거부');
-assert.ok(app.nodes.get('formMessage').textContent.includes('중복'));
-app.run('editingId=schedules[0].id');
-submit('변경된 가상 회의','10:00','10:30');
-assert.equal(app.run('schedules[0].content'),'변경된 가상 회의','본인 일정 변경');
-assert.equal(app.run('schedules.length'),1);
-app.nodes.get('monthView').onclick();
-assert.equal(app.run('view'),'month');
-assert.ok(app.nodes.get('calendarBody').innerHTML.includes('booking'));
-app.nodes.get('categoryFilter').value='personal';
-app.nodes.get('categoryFilter').onchange();
-assert.ok(app.nodes.get('scheduleList').innerHTML.includes('empty-table'));
-const stored=app.values.get('online-work-notebook.standalone.v1');
-const restored=boot({raw:stored});
-assert.equal(restored.run('schedules[0].content'),'변경된 가상 회의','재시작 저장 복원');
-app.run('pendingCancel=schedules[0].id');
-app.nodes.get('confirmCancel').onclick();
-assert.equal(app.run('schedules.length'),0,'일정 취소');
-assert.equal(app.values.get('online-work-notebook.standalone.v1'),'[]');
-const broken=boot({raw:'{'});
-assert.equal(broken.nodes.get('submitBtn').disabled,true,'손상 데이터 보호');
-assert.equal(broken.values.get('online-work-notebook.standalone.v1'),'{');
-const quota=boot({failWrite:true});
-assert.equal(quota.run('save([])'),false,'저장 실패 반환');
-assert.ok(quota.nodes.get('formMessage').textContent.includes('저장하지 못'));
-assert.ok(broken.nodes.get('upcomingList').innerHTML.includes('저장된 일정을 읽을 수 없습니다'));
-const upcoming=boot();
-upcoming.run(`save([
- {id:'due-today',category:'work',date:today(),start:'09:00',end:'09:30',content:'오늘 일정'},
- {id:'due-seven',category:'personal',date:addDays(today(),7),start:'10:00',end:'10:30',content:'일주일 뒤 일정'},
- {id:'too-late',category:'work',date:addDays(today(),8),start:'09:00',end:'09:30',content:'다음 범위 일정'}
-]);render()`);
-assert.equal(upcoming.nodes.get('upcomingCount').textContent,'2건');
-assert.ok(upcoming.nodes.get('upcomingList').innerHTML.includes('D-day'));
-assert.ok(upcoming.nodes.get('upcomingList').innerHTML.includes('D-7'));
-assert.ok(!upcoming.nodes.get('upcomingList').innerHTML.includes('too-late'));
-upcoming.nodes.get('categoryFilter').value='work';
-upcoming.nodes.get('categoryFilter').onchange();
-upcoming.nodes.get('nextPeriod').onclick();
-assert.equal(upcoming.nodes.get('upcomingCount').textContent,'2건','기간·분류 선택과 무관한 D-day 목록');
-upcoming.nodes.get('upcomingList').handlers.click({target:{closest:()=>({dataset:{edit:'due-today'}})}});
-assert.equal(upcoming.run('editingId'),'due-today','상단 일정에서 변경 진입');
-upcoming.nodes.get('date').value=upcoming.run('addDays(today(),9)');
-upcoming.nodes.get('scheduleForm').handlers.submit({preventDefault(){}});
-assert.equal(upcoming.nodes.get('upcomingCount').textContent,'1건','변경 후 D-day 목록 갱신');
-upcoming.nodes.get('upcomingList').handlers.click({target:{closest:()=>({dataset:{cancel:'due-seven'}})}});
-assert.equal(upcoming.nodes.get('cancelDialog').open,true,'상단 일정 취소 확인');
-upcoming.nodes.get('confirmCancel').onclick();
-assert.equal(upcoming.nodes.get('upcomingCount').textContent,'0건');
-assert.ok(upcoming.nodes.get('upcomingList').innerHTML.includes('처리할 일정이 없습니다'));
-const signup=boot();
-const beforeSignup=JSON.stringify([...signup.values]);
-signup.nodes.get('openSignup').handlers.click();
-assert.equal(signup.nodes.get('signupDialog').open,true);
-signup.nodes.get('signupForm').handlers.submit({preventDefault(){}});
-assert.equal(signup.nodes.get('signupError').hidden,false,'빈 이름 안내');
-signup.nodes.get('signupName').value='테스트 사용자';
-signup.nodes.get('signupPhone').value='010-0000';
-signup.nodes.get('signupForm').handlers.submit({preventDefault(){}});
-assert.equal(signup.nodes.get('signupResult').hidden,true,'잘못된 전화번호 거부');
-signup.nodes.get('signupPhone').value='010-0000-0000';
-signup.nodes.get('signupForm').handlers.submit({preventDefault(){}});
-assert.equal(signup.nodes.get('signupResult').hidden,false);
-assert.equal(signup.nodes.get('signupPreviewName').textContent,'테스트 사용자');
-assert.equal(signup.nodes.get('signupPreviewPhone').textContent,'010-****-0000','전화번호 마스킹');
-assert.equal(signup.nodes.get('signupPhone').value,'','입력 전화번호 원문 지우기');
-assert.equal(JSON.stringify([...signup.values]),beforeSignup,'가입 체험 정보 미저장');
-signup.nodes.get('closeSignup').handlers.click();
-assert.equal(signup.nodes.get('signupPreviewName').textContent,'','닫기 후 이름 지우기');
-assert.equal(signup.nodes.get('signupPreviewPhone').textContent,'','닫기 후 번호 지우기');
-signup.nodes.get('openSignup').handlers.click();
-assert.equal(signup.nodes.get('signupForm').hidden,false,'다시 열기 초기화');
-console.log(`PASS: ${results.length} rule tests; CRUD, D-day, signup preview validation, masking, no persistence, close/reopen reset.`);
+main().catch(error=>{console.error(error);process.exitCode=1;});

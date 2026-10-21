@@ -44,6 +44,12 @@ select:disabled { background: #f5f6f3; color: var(--muted); }
 .signup-result dt { color: var(--muted); font-size: 12px; }
 .signup-result dd { margin: 0; overflow-wrap: anywhere; font-weight: 600; }
 .signup-result button { width: 100%; }
+.auth-tabs { margin: 18px 0; width: fit-content; }
+.account-phone { white-space: nowrap; color: var(--green); font-size: 12px; }
+.account-panel { padding: 16px 28px; border-bottom: 1px solid var(--line); background: #f6f8f3; }
+.account-panel p { margin: 5px 0; font-size: 12px; color: var(--muted); }
+.account-panel button { margin-top: 8px; font-size: 12px; }
+.reload-row { padding: 15px 28px 0; }.reload-row button { font-size: 12px; min-height: 34px; }
 .skip-link { position: fixed; top: 8px; left: -9999px; z-index: 100; padding: 12px 20px; border-radius: 6px; background: var(--deep); color: white; }
 .skip-link:focus { left: 12px; }
 
@@ -92,6 +98,7 @@ h2 { margin: 0; color: var(--green); font-size: 19px; font-weight: 700; line-hei
 .view-switch button[aria-pressed="false"] { border-color: transparent; background: transparent; color: var(--muted); }
 .view-switch button[aria-pressed="false"]:hover { background: #e6eee8; color: var(--green); }
 .count { color: var(--muted); font-size: 12px; }
+.calendar-category { width: 110px; }
 
 /* 표와 일정 카드 */
 .table-wrap { overflow-x: auto; border-top: 1px solid var(--line); }
