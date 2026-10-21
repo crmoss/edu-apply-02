@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1e3932">
+<title>온라인 업무 수첩</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip-link" href="#main">본문으로 건너뛰기</a>
+<header class="site-header"><div class="site-header-inner">
+<a class="brand" href="#main" aria-label="온라인 업무 수첩 홈"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" width="32" height="32" fill="none"><rect x="7" y="5" width="19" height="23" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M12 5v23M4 11h6M4 17h6M4 23h6M16 12h6M16 17h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><span>온라인 업무 수첩</span></a>
+<nav class="site-nav" aria-label="주 메뉴"><a href="#upcomingSection">D-day</a><a href="#calendarSection">일정 현황</a><a href="#formSection">일정 등록</a><a href="#listSection">등록 목록</a></nav>
+<span class="badge storage-badge" id="storageBadge">브라우저에 자동 저장</span>
+</div></header>
+<main class="page" id="main" tabindex="-1">
+<section class="hero" aria-labelledby="pageHeading">
+<div class="hero-copy"><p class="eyebrow">MY WORK NOTEBOOK</p><h1 id="pageHeading">하루의 계획을 정리하는<br>나만의 업무 수첩</h1><p class="subtitle">업무부터 개인 일정까지, 한곳에서 가볍게.<br>다가오는 일정을 확인하고 여유 있게 하루를 준비하세요.</p><div class="hero-actions"><a class="button-link primary" href="#formSection">새 일정 등록 <span aria-hidden="true">＋</span></a><a class="text-link" href="#calendarSection">내 일정 살펴보기 <span aria-hidden="true">→</span></a></div></div>
+<aside class="hero-note" aria-label="업무 수첩 안내"><span class="note-label">A LITTLE PLAN, A BETTER DAY</span><p class="hero-note-title">작은 계획이 모여<br>더 좋은 하루가 됩니다.</p><div class="note-divider"></div><ul class="hero-note-list"><li><span aria-hidden="true">01</span>다가오는 일정은 D-day로 한눈에</li><li><span aria-hidden="true">02</span>업무와 개인 일정을 함께 정리</li><li><span aria-hidden="true">03</span>주간·월간 보기로 흐름을 확인</li></ul></aside>
+</section>
+<section id="upcomingSection" class="panel upcoming-panel" aria-labelledby="upcomingHeading">
+<div class="panel-head"><h2 id="upcomingHeading">7일 이내 처리할 일정</h2><span id="upcomingCount" class="badge" aria-live="polite"></span></div>
+<p id="upcomingDescription" class="description"></p>
+<div id="upcomingList" class="upcoming-list"></div>
+</section>
+<section id="calendarSection" class="panel" aria-labelledby="calendarHeading">
+<div class="panel-head"><span class="step">01</span><h2 id="calendarHeading">주간 일정 현황</h2></div>
+<div class="toolbar"><div class="navigation"><span class="period-title" id="periodTitle"></span><button id="prevPeriod">이전 주</button><button id="currentPeriod">이번 주</button><button id="nextPeriod">다음 주</button></div><div class="view-actions"><div class="view-switch" role="group" aria-label="일정 보기 방식"><button id="weekView" class="selected" aria-pressed="true">주간 보기</button><button id="monthView" aria-pressed="false">월간 보기</button></div><select id="categoryFilter" aria-label="일정 분류 필터"><option value="all">전체 분류</option><option value="work">업무</option><option value="personal">개인</option></select></div></div>
+<div class="table-wrap"><table id="calendarTable"><caption id="calendarCaption"></caption><thead id="calendarHead"></thead><tbody id="calendarBody"></tbody></table></div>
+<div class="table-footer"><span id="periodCount" aria-live="polite"></span><span>일정 카드에서 변경·취소할 수 있습니다. 앞 일정의 종료 시간에 다음 일정을 시작할 수 있습니다.</span></div>
+</section>
+<section id="formSection" class="panel" aria-labelledby="formHeading">
+<div class="panel-head"><span class="step">02</span><h2 id="formHeading">일정 등록하기</h2></div>
+<p class="description">분류, 날짜, 시간과 내용을 입력해 주세요. 업무·개인 일정의 시간이 겹치면 등록할 수 없습니다.</p>
+<form id="scheduleForm" class="form">
+<div class="fields">
+<div class="field"><label for="category">분류</label><select id="category" required><option value="work">업무</option><option value="personal">개인</option></select></div>
+<div class="field"><label for="date">일정 날짜</label><input id="date" type="date" min="0001-01-01" max="9999-12-31" required></div>
+<div class="field"><label for="startHour">시작 시간</label><div class="time-selects"><select id="startHour" aria-label="시작 시" required></select><select id="startMinute" aria-label="시작 분" required><option value="00">00분</option><option value="30">30분</option></select></div></div>
+<div class="field"><label for="endHour">종료 시간</label><div class="time-selects"><select id="endHour" aria-label="종료 시" required></select><select id="endMinute" aria-label="종료 분" required><option value="00">00분</option><option value="30">30분</option></select></div></div>
+<div class="field content-field"><label for="content">일정 내용</label><input id="content" placeholder="예: 주간 업무 정리, 병원 방문" maxlength="200" required></div>
+</div>
+<div class="form-bottom"><p class="note">일정은 07:00~23:00 사이에 30분 단위로 등록할 수 있습니다. 마지막 시작 시간은 22:30입니다.<br>시작 시간을 선택하면 종료 시간이 30분 뒤로 설정됩니다. 종료 시간은 시작 시간보다 늦어야 합니다.</p><div class="form-actions"><button id="cancelEdit" class="hidden" type="button">변경 취소</button><button id="submitBtn" class="primary" type="submit">일정 등록</button></div></div>
+<p id="formMessage" class="message hidden" role="status" aria-live="polite"></p>
+</form>
+</section>
+<section id="listSection" class="panel" aria-labelledby="listHeading"><div class="panel-head"><span class="step">03</span><h2 id="listHeading">등록 내용 목록</h2></div><div id="listSummary" class="list-meta"></div><div class="table-wrap"><table class="list-table schedule-table"><caption>선택한 기간과 분류의 일정을 날짜·시작 시간 순으로 표시합니다. D-day는 접속한 기기의 오늘 날짜 기준입니다.</caption><thead><tr><th scope="col">날짜</th><th scope="col">D-day</th><th scope="col">시간</th><th scope="col">분류</th><th scope="col">일정 내용</th><th scope="col">관리</th></tr></thead><tbody id="scheduleList"></tbody></table></div></section>
+</main>
+<footer class="site-footer"><div class="footer-inner"><div><h2>온라인 업무 수첩</h2><p>오늘의 계획, 내일의 여유.</p></div><div class="footer-guide"><h3>일정 저장 안내</h3><p>일정은 현재 브라우저에 저장됩니다. 다른 기기·브라우저와 자동 공유되지 않으며,<br>브라우저 저장 데이터를 삭제하면 일정도 삭제됩니다.</p></div><a href="#main">맨 위로 <span aria-hidden="true">↑</span></a></div><div class="footer-bottom">MY WORK NOTEBOOK · 나를 위한 간편한 개인 일정 관리</div></footer>
+<dialog id="cancelDialog" aria-labelledby="cancelHeading"><h2 id="cancelHeading">일정을 취소할까요?</h2><p id="cancelDescription"></p><div class="dialog-actions"><button id="keepSchedule">돌아가기</button><button id="confirmCancel" class="danger">일정 취소</button></div></dialog>
+<script src="logic.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
