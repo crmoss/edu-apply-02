@@ -32,14 +32,14 @@ Supabase·Vercel 연동 기능을 설치하고 계정을 연결하면 설정을 
 
 ## 3. Vercel 환경 변수 등록
 
-Supabase 프로젝트의 API 설정에서 Project URL과 **서버 전용 legacy service_role 키**를 확인합니다. 현재 코드는 이 JWT 키를 apikey/Authorization에 사용합니다. publishable/anon 키로 대체하지 않습니다.
+Supabase 프로젝트의 API 설정에서 Project URL과 **서버 전용 secret 키(`sb_secret_...`) 또는 legacy service_role 키**를 확인합니다. 두 방식 모두 지원하며 같은 환경 변수 `SUPABASE_SERVICE_ROLE_KEY`에 넣습니다. publishable/anon 키로 대체하지 않습니다.
 
 Vercel → `edu-apply-02` → Settings → Environment Variables에 다음 값을 등록합니다.
 
 | 이름 | 값 |
 | --- | --- |
 | SUPABASE_URL | `https://프로젝트ID.supabase.co` |
-| SUPABASE_SERVICE_ROLE_KEY | 서버 전용 service_role JWT 키 |
+| SUPABASE_SERVICE_ROLE_KEY | 서버 전용 secret 키 또는 legacy service_role JWT 키 |
 | APP_ORIGIN | `https://edu-apply-02.vercel.app` |
 | RATE_LIMIT_SECRET | 직접 생성한 32자 이상의 긴 난수 |
 
@@ -92,6 +92,7 @@ DB·환경 변수 설정 후 코드 변경을 검토하고 커밋·푸시합니�
 - 조회는 사용자당 최대 10,000건까지 페이지 단위로 가져옵니다. 초과 시 조용히 누락하지 않고 오류를 표시합니다.
 - 인증 시도는 IP당 30회·번호당 10회/15분 구간으로 제한합니다. signup/login은 각자 별도 구간입니다. 제한 설정·보안·무료 용량을 운영 중 점검하세요.
 - 환경 변수가 없으면 503 오류, 다른 도메인의 변경 요청은 403, 로그인 미완료·만료는 401, 중복 시간·버전 충돌은 409입니다.
+- DB 키 인증 실패, 함수 누락(`DB_FUNCTION_MISSING`), 테이블 누락(`DB_TABLE_MISSING`), 권한 오류(`DB_PERMISSION_DENIED`)는 각각 다른 안내를 표시합니다. 비밀키나 Supabase 원문 오류 내용은 화면에 노출하지 않습니다.
 - 무료 DB 사용량 한도를 넘거나 중지되면 서비스를 사용할 수 없습니다. 유료 전환은 자동으로 진행하지 않습니다.
 - 비밀번호 복구는 타인이 쉽게 계정을 탈취하는 번호 입력만의 초기화로 구현하지 않았습니다. 운영자는 복구·탈퇴 요청 처리와 개인정보 보관·삭제 안내를 공개 운영 전에 확정해야 합니다.
 - DB 복구·백업은 별도 운영 절차가 필요합니다. 무료 플랜에 유료 플랜의 백업 보장을 가정하지 마세요.
