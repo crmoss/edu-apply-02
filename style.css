@@ -28,6 +28,22 @@ select:disabled { background: #f5f6f3; color: var(--muted); }
 .danger { color: #b53d31; border-color: #e3c8c1; }
 .danger:hover { background: #fff2ee; border-color: #b53d31; }
 .hidden { display: none !important; }
+[hidden] { display: none !important; }
+.signup-trigger { flex-shrink: 0; font-size: 12px; padding-inline: 14px; }
+.signup-dialog { width: 480px; }
+.signup-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+.signup-heading button { min-height: 32px; padding: 5px 12px; font-size: 12px; }
+.signup-notice { padding: 12px 14px; border: 1px solid #e9decc; border-radius: 8px; background: #faf6ee; color: #5f573f; }
+.signup-dialog .field { margin-top: 18px; }
+.signup-hint { margin: 7px 0 0; font-size: 11px; color: var(--muted); }
+.signup-submit { width: 100%; margin-top: 20px; }
+.signup-privacy { padding-top: 14px; margin: 20px 0 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+.signup-result h3 { color: var(--green); margin: 20px 0 8px; font-size: 18px; }
+.signup-result dl { margin: 18px 0; }
+.signup-result dl div { display: grid; grid-template-columns: 100px minmax(0,1fr); gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.signup-result dt { color: var(--muted); font-size: 12px; }
+.signup-result dd { margin: 0; overflow-wrap: anywhere; font-weight: 600; }
+.signup-result button { width: 100%; }
 .skip-link { position: fixed; top: 8px; left: -9999px; z-index: 100; padding: 12px 20px; border-radius: 6px; background: var(--deep); color: white; }
 .skip-link:focus { left: 12px; }
 
@@ -115,6 +131,13 @@ thead th.red-day, thead th.red-day span, .day-label.red-day { color: #ad493e; }
 .upcoming-panel .badge { border-color: var(--gold); background: #faf6ee; color: #765b2d; }
 .upcoming-list { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,260px),1fr)); gap: 18px; padding: 2px 28px 28px; }
 .upcoming-item { min-width: 0; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: white; }
+.upcoming-item.upcoming-work { background: #eff7f2; border-color: #c9dfd0; border-left: 4px solid var(--accent); }
+.upcoming-item.upcoming-personal { background: #fbf5e9; border-color: #e8d8b8; border-left: 4px solid #b08b4f; }
+.upcoming-item .booking-category { display: inline-block; padding: 3px 10px; border-radius: 50px; background: #d8ebdf; color: #23583e; font-size: 11px; font-weight: 700; }
+.upcoming-personal .booking-category { background: #f0e1c2; color: #74521c; }
+.upcoming-personal .booking-time { color: #74521c; }
+.upcoming-item.upcoming-work .item-actions { border-top-color: #c9dfd0; }
+.upcoming-item.upcoming-personal .item-actions { border-top-color: #e8d8b8; }
 .upcoming-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 12px; color: var(--muted); font-size: 12px; }
 .upcoming-item .booking, .upcoming-item .booking.personal { margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; }
 .upcoming-item .booking-title { font-size: 14px; margin: 9px 0; }
@@ -154,7 +177,7 @@ dialog p { font-size: 13px; line-height: 1.9; overflow-wrap: anywhere; }
 .footer-bottom { padding: 18px 40px; border-top: 1px solid #ffffff1a; color: #b8c9be; font-size: 10px; letter-spacing: .8px; text-align: center; }
 
 @media (max-width: 1120px) {
-  .site-header-inner { gap: 28px; }.site-nav { gap: 20px; }
+  .site-header-inner { gap: 16px; }.site-nav { gap: 16px; }
   .storage-badge { margin-left: auto; max-width: 150px; font-size: 10px; }
   .hero { gap: 36px; }.hero-note { padding: 30px; }
   .fields { grid-template-columns: repeat(4,minmax(0,1fr)); }.content-field { grid-column: 1/-1; }
@@ -167,6 +190,7 @@ dialog p { font-size: 13px; line-height: 1.9; overflow-wrap: anywhere; }
   .site-header-inner { min-height: auto; padding: 14px 22px 0; }
   .brand { font-size: 16px; }.brand-mark { width: 36px; height: 36px; }.brand-mark svg { width: 27px; }
   .site-nav { justify-content: space-between; gap: 10px; }.site-nav a { padding: 10px 0 13px; font-size: 12px; }
+  .storage-badge { display: none; }.signup-trigger { margin-left: auto; }
   .page { padding: 0 22px 18px; }
   .hero { grid-template-columns: 1fr; gap: 28px; padding: 38px 0 32px; }
   h1 { font-size: 33px; }.hero-note { padding: 25px 28px; }.hero-note-title { font-size: 23px; margin: 13px 0 18px; }

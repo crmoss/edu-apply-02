@@ -19,7 +19,7 @@ function renderUpcoming(base){
  const items=upcomingSchedules(schedules,base);
  $('upcomingCount').textContent=`${items.length}건`;
  $('upcomingDescription').textContent=`${base} 기준 · 오늘부터 7일 후까지 · 전체 업무·개인 일정 (아래 기간·분류 선택과 무관)`;
- $('upcomingList').innerHTML=!storageHealthy?'<p class="upcoming-empty">저장된 일정을 읽을 수 없습니다. 저장 상태를 확인해 주세요.</p>':items.length?items.map(s=>`<div class="upcoming-item"><div class="upcoming-meta">${ddayBadge(s.date,base)}<span>${s.date}</span></div>${card(s)}</div>`).join(''):'<p class="upcoming-empty">오늘부터 7일 이내에 처리할 일정이 없습니다.</p>';
+ $('upcomingList').innerHTML=!storageHealthy?'<p class="upcoming-empty">저장된 일정을 읽을 수 없습니다. 저장 상태를 확인해 주세요.</p>':items.length?items.map(s=>`<div class="upcoming-item ${s.category==='personal'?'upcoming-personal':'upcoming-work'}"><div class="upcoming-meta">${ddayBadge(s.date,base)}<span>${s.date}</span></div>${card(s)}</div>`).join(''):'<p class="upcoming-empty">오늘부터 7일 이내에 처리할 일정이 없습니다.</p>';
 }
 function render(){
  const base=today();

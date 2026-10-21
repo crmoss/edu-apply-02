@@ -32,7 +32,7 @@ function boot({raw=null,failWrite=false}={}){
     window:{addEventListener:(name,fn)=>events[name]=fn},
     localStorage:{getItem:key=>values.get(key)??null,setItem:(key,value)=>{if(failWrite)throw Error('quota');values.set(key,value)}}
   });
-  vm.runInContext(read('logic.js')+'\n'+read('app.js'),context);
+  vm.runInContext(read('logic.js')+'\n'+read('app.js')+'\n'+read('signup.js'),context);
   return {nodes,values,run:code=>vm.runInContext(code,context)};
 }
 const app=boot();
@@ -96,4 +96,26 @@ assert.equal(upcoming.nodes.get('cancelDialog').open,true,'상단 일정 취소 
 upcoming.nodes.get('confirmCancel').onclick();
 assert.equal(upcoming.nodes.get('upcomingCount').textContent,'0건');
 assert.ok(upcoming.nodes.get('upcomingList').innerHTML.includes('처리할 일정이 없습니다'));
-console.log(`PASS: ${results.length} rule tests; CRUD, filters, persistence, errors, D-day display, independent range, edit/cancel updates.`);
+const signup=boot();
+const beforeSignup=JSON.stringify([...signup.values]);
+signup.nodes.get('openSignup').handlers.click();
+assert.equal(signup.nodes.get('signupDialog').open,true);
+signup.nodes.get('signupForm').handlers.submit({preventDefault(){}});
+assert.equal(signup.nodes.get('signupError').hidden,false,'빈 이름 안내');
+signup.nodes.get('signupName').value='테스트 사용자';
+signup.nodes.get('signupPhone').value='010-0000';
+signup.nodes.get('signupForm').handlers.submit({preventDefault(){}});
+assert.equal(signup.nodes.get('signupResult').hidden,true,'잘못된 전화번호 거부');
+signup.nodes.get('signupPhone').value='010-0000-0000';
+signup.nodes.get('signupForm').handlers.submit({preventDefault(){}});
+assert.equal(signup.nodes.get('signupResult').hidden,false);
+assert.equal(signup.nodes.get('signupPreviewName').textContent,'테스트 사용자');
+assert.equal(signup.nodes.get('signupPreviewPhone').textContent,'010-****-0000','전화번호 마스킹');
+assert.equal(signup.nodes.get('signupPhone').value,'','입력 전화번호 원문 지우기');
+assert.equal(JSON.stringify([...signup.values]),beforeSignup,'가입 체험 정보 미저장');
+signup.nodes.get('closeSignup').handlers.click();
+assert.equal(signup.nodes.get('signupPreviewName').textContent,'','닫기 후 이름 지우기');
+assert.equal(signup.nodes.get('signupPreviewPhone').textContent,'','닫기 후 번호 지우기');
+signup.nodes.get('openSignup').handlers.click();
+assert.equal(signup.nodes.get('signupForm').hidden,false,'다시 열기 초기화');
+console.log(`PASS: ${results.length} rule tests; CRUD, D-day, signup preview validation, masking, no persistence, close/reopen reset.`);

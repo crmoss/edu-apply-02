@@ -13,6 +13,7 @@
 <a class="brand" href="#main" aria-label="온라인 업무 수첩 홈"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" width="32" height="32" fill="none"><rect x="7" y="5" width="19" height="23" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M12 5v23M4 11h6M4 17h6M4 23h6M16 12h6M16 17h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><span>온라인 업무 수첩</span></a>
 <nav class="site-nav" aria-label="주 메뉴"><a href="#upcomingSection">D-day</a><a href="#calendarSection">일정 현황</a><a href="#formSection">일정 등록</a><a href="#listSection">등록 목록</a></nav>
 <span class="badge storage-badge" id="storageBadge">브라우저에 자동 저장</span>
+<button id="openSignup" class="signup-trigger" type="button" aria-haspopup="dialog">가입 화면 체험</button>
 </div></header>
 <main class="page" id="main" tabindex="-1">
 <section class="hero" aria-labelledby="pageHeading">
@@ -49,7 +50,26 @@
 </main>
 <footer class="site-footer"><div class="footer-inner"><div><h2>온라인 업무 수첩</h2><p>오늘의 계획, 내일의 여유.</p></div><div class="footer-guide"><h3>일정 저장 안내</h3><p>일정은 현재 브라우저에 저장됩니다. 다른 기기·브라우저와 자동 공유되지 않으며,<br>브라우저 저장 데이터를 삭제하면 일정도 삭제됩니다.</p></div><a href="#main">맨 위로 <span aria-hidden="true">↑</span></a></div><div class="footer-bottom">MY WORK NOTEBOOK · 나를 위한 간편한 개인 일정 관리</div></footer>
 <dialog id="cancelDialog" aria-labelledby="cancelHeading"><h2 id="cancelHeading">일정을 취소할까요?</h2><p id="cancelDescription"></p><div class="dialog-actions"><button id="keepSchedule">돌아가기</button><button id="confirmCancel" class="danger">일정 취소</button></div></dialog>
+<dialog id="signupDialog" class="signup-dialog" aria-labelledby="signupHeading" aria-describedby="signupNotice">
+<div class="signup-heading"><span class="badge">무료 화면 테스트</span><button id="closeSignup" type="button" aria-label="가입 체험 닫기">닫기</button></div>
+<h2 id="signupHeading">업무 수첩 가입 체험</h2>
+<p id="signupNotice" class="signup-notice">이름과 휴대폰 번호로 가입하는 화면을 미리 살펴보세요. 실제 계정 생성·문자 발송·본인 인증은 진행되지 않습니다. 가상 정보를 입력해 주세요.</p>
+<form id="signupForm" autocomplete="off" novalidate>
+<div class="field"><label for="signupName">이름</label><input id="signupName" type="text" maxlength="30" placeholder="예: 테스트 사용자" autocomplete="off" required></div>
+<div class="field"><label for="signupPhone">휴대폰 번호</label><input id="signupPhone" type="tel" inputmode="tel" maxlength="13" placeholder="예: 010-0000-0000" autocomplete="off" aria-describedby="signupPhoneHint" required><p id="signupPhoneHint" class="signup-hint">010으로 시작하는 11자리 번호 형식을 확인합니다. 번호 소유 여부는 확인하지 않습니다.</p></div>
+<p id="signupError" class="message error" role="alert" hidden></p>
+<button class="primary signup-submit" type="submit">가입 화면 확인하기</button>
+</form>
+<div id="signupResult" class="signup-result" hidden>
+<h3>가입 화면 테스트 완료</h3><p>입력한 정보가 화면에 어떻게 표시되는지 확인해 주세요.</p>
+<dl><div><dt>이름</dt><dd id="signupPreviewName"></dd></div><div><dt>휴대폰 번호</dt><dd id="signupPreviewPhone"></dd></div></dl>
+<p class="signup-notice">실제 회원으로 등록되거나 로그인된 상태가 아닙니다. 기존 일정의 저장·열람 방식은 그대로 유지됩니다.</p>
+<button id="retrySignup" type="button">다시 체험하기</button>
+</div>
+<p class="signup-privacy">입력 정보는 서버 전송이나 브라우저 저장 없이 이 창에서만 사용합니다. 창을 닫거나 새로고침하면 지워집니다.</p>
+</dialog>
 <script src="logic.js"></script>
 <script src="app.js"></script>
+<script src="signup.js"></script>
 </body>
 </html>
