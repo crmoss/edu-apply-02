@@ -11,9 +11,11 @@ function selectAuthMode(mode){
 function updateAuthUI(){
  $('openSignup').hidden=!!currentUser;$('logoutButton').hidden=!currentUser;$('accountPhone').hidden=!currentUser;
  $('accountPhone').textContent=currentUser?.phone||'';
- $('accountMessage').textContent=currentUser?'로그인한 계정의 일정만 DB에서 조회·저장합니다. 다른 기기에서 변경한 내용은 다시 조회해 주세요.':'휴대폰 번호와 비밀번호로 로그인하면 나의 일정을 조회·저장할 수 있습니다.';
+ $('accountMessage').textContent=currentUser?'':'로그인 후 일정을 확인하세요.';
+ $('accountMessage').hidden=!!currentUser;
  $('legacyImport').hidden=true;
- if(currentUser){try{const items=readData(localStorage.getItem(KEY));if(items.length){$('legacyImportInfo').textContent=`기존 브라우저 일정 ${items.length}건이 있습니다. 현재 계정에 복사하며 브라우저 원본은 유지합니다.`;$('legacyImport').hidden=false;}}catch{$('accountMessage').textContent+=' 기존 브라우저 일정은 읽을 수 없어 자동으로 이전하지 않습니다.';}}
+ if(currentUser){try{const items=readData(localStorage.getItem(KEY));if(items.length){$('legacyImportInfo').textContent=`기존 브라우저 일정 ${items.length}건 · 원본을 유지하고 내 계정에 복사합니다.`;$('legacyImport').hidden=false;}}catch{$('accountMessage').textContent='기존 브라우저 일정을 읽을 수 없습니다.';$('accountMessage').hidden=false;}}
+ $('accountPanel').hidden=$('accountMessage').hidden&&$('legacyImport').hidden;
 }
 $('openSignup').addEventListener('click',()=>{if(busy||authWorking)return;selectAuthMode('login');$('signupDialog').showModal();$('signupPhone').focus();});
 $('closeSignup').addEventListener('click',()=>{if(!authWorking)$('signupDialog').close();});

@@ -2,7 +2,7 @@
 
 검토일: 2026-10-21 · 상태: 설계 제안, 미구현
 
-후속 구현 안내: 이 문서는 최초 검토 기록입니다. 현재 코드는 Vercel Functions + Supabase PostgreSQL, SMS 없는 자체 휴대폰 번호·비밀번호 인증으로 구현했습니다. 기존 제안과 다른 실제 스키마·연결·제약은 [DB_SETUP.md](DB_SETUP.md), [PRD.md](PRD.md), [PHONE_AUTH_PLAN.md](PHONE_AUTH_PLAN.md)를 우선 참고하세요. 운영 연결은 환경 변수 설정 및 배포 후 검증합니다.
+보관 안내: 2026-10-22에 과거 자료 폴더로 이동했습니다. 이 문서는 최초 검토 기록입니다. 현재 코드는 Vercel Functions + Supabase PostgreSQL, SMS 없는 자체 휴대폰 번호·비밀번호 인증으로 구현했습니다. 기존 제안과 다른 실제 스키마·연결·제약은 [DB_SETUP.md](../DB_SETUP.md), [PRD.md](../PRD.md), [PHONE_AUTH_PLAN.md](../PHONE_AUTH_PLAN.md)를 우선 참고하세요. 운영 연결은 환경 변수 설정 및 배포 후 검증합니다.
 
 ## 1. 검토 결론
 

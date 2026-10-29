@@ -36,7 +36,7 @@ function ddayBadge(date,base){
 function renderUpcoming(base){
  const items=upcomingSchedules(schedules,base);
  $('upcomingCount').textContent=`${items.length}건`;
- $('upcomingDescription').textContent=`${base} 기준 · 오늘부터 7일 후까지 · 전체 업무·개인 일정 (아래 기간·분류 선택과 무관)`;
+ $('upcomingDescription').textContent=`${base} ~ ${addDays(base,7)} · 전체 일정`;
  $('upcomingList').innerHTML=!currentUser?'<p class="upcoming-empty">로그인하면 나의 D-day 일정을 확인할 수 있습니다.</p>':!storageHealthy?'<p class="upcoming-empty">DB 일정을 조회하지 못했거나 조회 중입니다. 다시 조회해 주세요.</p>':items.length?items.map(s=>`<div class="upcoming-item ${s.category==='personal'?'upcoming-personal':'upcoming-work'}"><div class="upcoming-meta">${ddayBadge(s.date,base)}<span>${s.date}</span></div>${card(s)}</div>`).join(''):'<p class="upcoming-empty">오늘부터 7일 이내에 처리할 일정이 없습니다.</p>';
 }
 function render(){

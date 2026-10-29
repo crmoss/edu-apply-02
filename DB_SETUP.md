@@ -8,6 +8,8 @@ Supabase·Vercel 연동 기능을 설치하고 계정을 연결하면 설정을 
 
 ## 1. Supabase 무료 프로젝트 만들기
 
+온라인 연결 전에 PC에서 가입·일정 등록을 테스트하려면 [LOCAL_TEST.md](LOCAL_TEST.md)의 `npm.cmd run dev` 방식을 사용하세요. 운영용 Supabase를 건드리지 않는 별도 로컬 DB가 자동 생성됩니다.
+
 1. [Supabase](https://supabase.com/dashboard)에 로그인하고 무료 조직/플랜에서 새 프로젝트를 만듭니다.
 2. 이름은 `online-work-notebook` 등으로 지정하고 서비스에 적합한 가까운 지역을 선택합니다.
 3. DB 관리자 비밀번호를 안전하게 보관합니다. 이 비밀번호는 사용자가 가입할 때 입력하는 비밀번호와 다릅니다.

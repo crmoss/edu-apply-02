@@ -28,6 +28,8 @@ select:disabled { background: #f5f6f3; color: var(--muted); }
 .danger { color: #b53d31; border-color: #e3c8c1; }
 .danger:hover { background: #fff2ee; border-color: #b53d31; }
 .hidden { display: none !important; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.local-mode-banner { padding: 7px 16px; background: #fff0ce; color: #74521c; font-size: 12px; font-weight: 600; text-align: center; }
 [hidden] { display: none !important; }
 .signup-trigger { flex-shrink: 0; font-size: 12px; padding-inline: 14px; }
 .signup-dialog { width: 480px; }
@@ -65,6 +67,9 @@ select:disabled { background: #f5f6f3; color: var(--muted); }
 .storage-badge { margin-left: auto; background: white; font-size: 11px; }
 .storage-badge::before { content: ""; width: 6px; height: 6px; margin-right: 7px; border-radius: 50%; background: currentColor; }
 .page { max-width: 1360px; margin: auto; padding: 0 40px 28px; }
+.page-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 0; }
+.page-heading h1 { font-size: 23px; line-height: 1.4; letter-spacing: -.6px; }
+.page-heading .button-link { min-height: 36px; padding: 7px 16px; font-size: 12px; }
 .hero { display: grid; grid-template-columns: 1.15fr 1fr; align-items: center; gap: 64px; padding: 58px 0 50px; }
 .eyebrow { margin: 0 0 17px; color: var(--green); font-size: 11px; font-weight: 700; letter-spacing: 2.3px; }
 h1 { margin: 0; color: var(--green); font-size: clamp(30px, 3vw, 42px); font-weight: 700; line-height: 1.4; letter-spacing: -1.6px; }
@@ -156,7 +161,7 @@ thead th.red-day, thead th.red-day span, .day-label.red-day { color: #ad493e; }
 .upcoming-empty { grid-column: 1/-1; margin: 0; padding: 20px; border: 1px dashed #d9dfd7; border-radius: 8px; background: #fafbf8; color: var(--muted); font-size: 13px; text-align: center; }
 
 /* 입력 폼과 메시지 */
-.form { padding: 6px 28px 28px; }
+.form { padding: 22px 28px 28px; }
 .fields { display: grid; grid-template-columns: .8fr 1.1fr 1.15fr 1.15fr 1.8fr; gap: 16px; }
 .field { min-width: 0; }
 .field label { display: block; margin-bottom: 8px; font-size: 12px; font-weight: 600; }
@@ -175,7 +180,7 @@ dialog p { font-size: 13px; line-height: 1.9; overflow-wrap: anywhere; }
 
 /* 하단 안내 */
 .site-footer { margin-top: 22px; background: var(--deep); color: #d3ded5; }
-.footer-inner { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 32px; max-width: 1360px; margin: auto; padding: 38px 40px; }
+.footer-inner { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px; max-width: 1360px; margin: auto; padding: 20px 40px; font-size: 12px; }
 .site-footer h2 { color: #dfc49d; font-size: 18px; }
 .site-footer h3 { margin: 0 0 10px; color: white; font-size: 13px; }
 .site-footer p { margin: 10px 0 0; font-size: 12px; line-height: 1.9; }
@@ -206,11 +211,11 @@ dialog p { font-size: 13px; line-height: 1.9; overflow-wrap: anywhere; }
   .description { padding: 0 20px; }.toolbar { padding: 18px 20px; }
   .navigation { width: 100%; }.period-title { min-width: 0; width: 100%; margin: 0 0 5px; font-size: 14px; }
   .view-actions { width: 100%; justify-content: space-between; gap: 8px; }
-  .form { padding: 6px 20px 22px; }.fields { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px 12px; }
+  .form { padding: 20px 20px 22px; }.fields { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px 12px; }
   .form-bottom { align-items: stretch; flex-direction: column; gap: 18px; }.form-actions button { flex: 1; }
   .upcoming-list { padding: 2px 20px 22px; gap: 12px; }.upcoming-panel .panel-head { flex-wrap: wrap; }
   .table-footer { flex-direction: column; gap: 5px; padding: 15px 20px; }.list-meta { padding: 14px 20px 18px; }
-  .footer-inner { padding: 30px 22px; gap: 24px; }.footer-guide { width: 100%; order: 2; }.footer-guide br { display: none; }
+  .footer-inner { padding: 18px 22px; }
 }
 @media (max-width: 420px) {
   .site-header-inner { gap: 7px; }.brand { font-size: 14px; gap: 6px; }.brand-mark { width: 30px; height: 30px; }

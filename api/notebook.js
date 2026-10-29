@@ -1,11 +1,14 @@
 'use strict';
 const {randomBytes,randomUUID,createHmac}=require('node:crypto');
-const database=require('../server/database.cjs');
+const productionDatabase=require('../server/database.cjs');
 const {AppError,phoneNumber,passwordValid,digest,hashPassword,verifyPassword,scheduleInput,scheduleOutput,uuid}=require('../server/core.cjs');
-const COOKIE='__Host-notebook_session';
+// 로컬 서버가 명시적으로 구성할 때만 별도 DB·HTTP 쿠키를 사용한다.
+function createHandler({database=productionDatabase,localOrigin,localRateSecret}={}){
+if(localOrigin){const origin=new URL(localOrigin);if(origin.protocol!=='http:'||!['127.0.0.1','localhost'].includes(origin.hostname)||origin.origin!==localOrigin)throw Error('Local mode requires an exact loopback HTTP origin');}
+const COOKIE=localOrigin?'notebook_local_session':'__Host-notebook_session';
 const duration=7*24*60*60;
 function cookieToken(req){const cookie=String(req.headers.cookie||'').split(';').map(s=>s.trim()).find(s=>s.startsWith(COOKIE+'='));return cookie?cookie.slice(COOKIE.length+1):'';}
-function setCookie(res,token,maxAge=duration){res.setHeader('Set-Cookie',`${COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`);}
+function setCookie(res,token,maxAge=duration){res.setHeader('Set-Cookie',`${COOKIE}=${token}; Path=/; HttpOnly;${localOrigin?'':' Secure;'} SameSite=Lax; Max-Age=${maxAge}`);}
 async function account(req){
  const token=cookieToken(req);if(!/^[a-f0-9]{64}$/.test(token))throw new AppError(401,'로그인이 필요합니다.');
  const rows=await database(`notebook_sessions?token_hash=eq.${digest(token)}&expires_at=gt.${encodeURIComponent(new Date().toISOString())}&select=user_id&limit=1`);
@@ -13,7 +16,7 @@ async function account(req){
  return rows[0].user_id;
 }
 async function throttle(req,phone,action){
- const secret=process.env.RATE_LIMIT_SECRET;if(!secret||secret.length<32)throw new AppError(503,'서버 인증 설정이 필요합니다.');
+ const secret=localOrigin?localRateSecret:process.env.RATE_LIMIT_SECRET;if(!secret||secret.length<32)throw new AppError(503,'서버 인증 설정이 필요합니다.');
  // Vercel이 설정한 IP 헤더를 사용한다. 개발 환경은 고정 버킷을 사용한다.
  const ip=String(req.headers['x-vercel-forwarded-for']||req.headers['x-forwarded-for']||'unknown').split(',')[0].trim();
  for(const [type,value,limit] of [['ip',ip,30],['phone',phone,10]]){
@@ -39,11 +42,11 @@ async function list(userId){
 async function handler(req,res){
  res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');
  try{
-  if(!process.env.SUPABASE_URL||!process.env.SUPABASE_SERVICE_ROLE_KEY)throw new AppError(503,'온라인 DB 연결 설정이 아직 완료되지 않았습니다.');
+  if(!localOrigin&&(!process.env.SUPABASE_URL||!process.env.SUPABASE_SERVICE_ROLE_KEY))throw new AppError(503,'온라인 DB 연결 설정이 아직 완료되지 않았습니다.');
   const action=String(req.query?.action||'session');
   if(!['GET','POST'].includes(req.method))throw new AppError(405,'허용되지 않은 요청입니다.');
   if(req.method==='POST'){
-   const expected=process.env.APP_ORIGIN;
+   const expected=localOrigin||process.env.APP_ORIGIN;
    if(!expected||req.headers.origin!==new URL(expected).origin)throw new AppError(403,'허용되지 않은 접속 주소입니다.');
    if(!String(req.headers['content-type']||'').startsWith('application/json'))throw new AppError(415,'JSON 요청이 필요합니다.');
   }
@@ -113,4 +116,7 @@ async function handler(req,res){
   return res.status(status).json({error:error instanceof AppError?error.message:status===400?'올바른 JSON을 입력해 주세요.':'서버 연결에 문제가 있습니다. 잠시 후 다시 시도해 주세요.'});
  }
 }
-module.exports=handler;
+return handler;
+}
+module.exports=createHandler();
+module.exports.createHandler=createHandler;
