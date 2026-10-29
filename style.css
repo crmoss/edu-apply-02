@@ -199,6 +199,8 @@ dialog p { font-size: 13px; line-height: 1.9; overflow-wrap: anywhere; }
   html { scroll-padding-top: 160px; }
 }
 @media (max-width: 760px) {
+  #calendarSection, #listSection,
+  .site-nav a[href="#calendarSection"], .site-nav a[href="#listSection"] { display: none; }
   .site-header-inner { min-height: auto; padding: 14px 22px 0; }
   .brand { font-size: 16px; }.brand-mark { width: 36px; height: 36px; }.brand-mark svg { width: 27px; }
   .site-nav { justify-content: space-between; gap: 10px; }.site-nav a { padding: 10px 0 13px; font-size: 12px; }

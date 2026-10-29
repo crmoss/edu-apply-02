@@ -18,6 +18,7 @@ test('로컬 서버: 실제 HTTP 가입·로그인·DB 저장·소유자 분리�
   const creds={phone:'01000000000',password:'local-test-password-123',passwordConfirm:'local-test-password-123'};
   const signup=await call('signup',creds);assert.equal(signup.status,200,JSON.stringify(signup.body));
   assert.ok(signup.cookie.includes('notebook_local_session='));assert.ok(signup.cookie.includes('HttpOnly'));assert.ok(!signup.cookie.includes('Secure'));
+  assert.match(signup.cookie, /(?:^|; )Max-Age=86400(?:;|$)/);
   const cookie=signup.cookie.split(';')[0];
   const input={category:'work',date:'2026-10-22',start:'09:00',end:'09:30',content:'로컬 등록 테스트'};
   const created=await call('create',input,cookie);assert.equal(created.status,200,JSON.stringify(created.body));
@@ -33,6 +34,7 @@ test('로컬 서버: 실제 HTTP 가입·로그인·DB 저장·소유자 분리�
   const loggedOut=await call('logout',{},cookie);assert.equal(loggedOut.status,200);
   assert.equal((await call('session',undefined,cookie)).status,401);
   const login=await call('login',creds);assert.equal(login.status,200);const newCookie=login.cookie.split(';')[0];
+  assert.match(login.cookie, /(?:^|; )Max-Age=86400(?:;|$)/);
   assert.equal((await call('list',undefined,newCookie)).body.schedules[0].content,'변경 완료');
   assert.equal((await call('delete',{id:created.body.schedule.id,version:2},newCookie)).status,200);
  }finally{await app.close();global.fetch=originalFetch;}

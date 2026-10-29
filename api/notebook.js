@@ -6,7 +6,7 @@ const {AppError,phoneNumber,passwordValid,digest,hashPassword,verifyPassword,sch
 function createHandler({database=productionDatabase,localOrigin,localRateSecret}={}){
 if(localOrigin){const origin=new URL(localOrigin);if(origin.protocol!=='http:'||!['127.0.0.1','localhost'].includes(origin.hostname)||origin.origin!==localOrigin)throw Error('Local mode requires an exact loopback HTTP origin');}
 const COOKIE=localOrigin?'notebook_local_session':'__Host-notebook_session';
-const duration=7*24*60*60;
+const duration=24*60*60;
 function cookieToken(req){const cookie=String(req.headers.cookie||'').split(';').map(s=>s.trim()).find(s=>s.startsWith(COOKIE+'='));return cookie?cookie.slice(COOKIE.length+1):'';}
 function setCookie(res,token,maxAge=duration){res.setHeader('Set-Cookie',`${COOKIE}=${token}; Path=/; HttpOnly;${localOrigin?'':' Secure;'} SameSite=Lax; Max-Age=${maxAge}`);}
 async function account(req){
