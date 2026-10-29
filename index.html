@@ -36,8 +36,8 @@
 <div class="panel-head"><span class="step">02</span><h2 id="formHeading">일정 등록하기</h2></div>
 <form id="scheduleForm" class="form">
 <div class="fields">
-<div class="field"><label for="category">분류</label><select id="category" required><option value="work">업무</option><option value="personal">개인</option></select></div>
-<div class="field"><label for="date">일정 날짜</label><input id="date" type="date" min="0001-01-01" max="9999-12-31" required></div>
+<div class="field category-field"><label for="category">분류</label><select id="category" required><option value="work">업무</option><option value="personal">개인</option></select></div>
+<div class="field date-field"><label for="date">일정 날짜</label><input id="date" type="date" min="0001-01-01" max="9999-12-31" required></div>
 <div class="field"><label for="startHour">시작 시간</label><div class="time-selects"><select id="startHour" aria-label="시작 시" required></select><select id="startMinute" aria-label="시작 분" required><option value="00">00분</option><option value="30">30분</option></select></div></div>
 <div class="field"><label for="endHour">종료 시간</label><div class="time-selects"><select id="endHour" aria-label="종료 시" required></select><select id="endMinute" aria-label="종료 분" required><option value="00">00분</option><option value="30">30분</option></select></div></div>
 <div class="field content-field"><label for="content">일정 내용</label><input id="content" placeholder="예: 주간 업무 정리, 병원 방문" maxlength="200" required></div>
