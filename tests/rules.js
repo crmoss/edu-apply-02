@@ -1,5 +1,5 @@
 'use strict';
-// 브라우저 및 Node.js에서 같은 규칙 테스트를 실행한다.
+// smoke-test.cjs에서 업무 규칙을 검증한다.
 const testResults=[];
 function check(label,run){
   try{if(!run())throw Error('예상 결과와 다름');testResults.push({label,ok:true})}
@@ -42,13 +42,3 @@ check('R-08 원본 일정 배열 유지',()=>{
  const items=[{...fixture,date:'2026-10-22'},{...fixture}];
  upcomingSchedules(items,'2026-10-21');return items[0].date==='2026-10-22';
 });
-if(typeof document!=='undefined'){
-  const body=document.getElementById('testResults');
-  testResults.forEach((result,index)=>{
-    const row=document.createElement('tr');
-    [String(index+1),result.label,result.ok?'PASS':`FAIL: ${result.error}`].forEach(text=>{
-      const cell=document.createElement('td');cell.textContent=text;row.append(cell);
-    });body.append(row);
-  });
-  document.getElementById('testSummary').textContent=`${testResults.length}개 중 ${testResults.filter(r=>r.ok).length}개 PASS`;
-}

@@ -9,6 +9,8 @@ test('PostgreSQL: 실제 마이그레이션·시간 제약·권한·요청 제�
   // Supabase 기본 역할·확장 스키마를 로컬 엔진에 준비한다.
   await db.exec('create schema extensions; create role anon; create role authenticated; create role service_role bypassrls; grant usage on schema public to anon,authenticated,service_role;');
   await db.exec(fs.readFileSync(require('node:path').join(__dirname,'../db/001_initial.sql'),'utf8'));
+  await db.exec(fs.readFileSync(require('node:path').join(__dirname,'../db/002_google_calendar.sql'),'utf8'));
+  await db.exec(fs.readFileSync(require('node:path').join(__dirname,'../db/003_owner_google_login.sql'),'utf8'));
   const hash='scrypt$'+'a'.repeat(32)+'$'+'b'.repeat(128);
   const a=(await db.query('insert into notebook_users(phone,password_hash) values($1,$2) returning id',['01000000000',hash])).rows[0].id;
   const b=(await db.query('insert into notebook_users(phone,password_hash) values($1,$2) returning id',['01000000001',hash])).rows[0].id;
@@ -20,6 +22,9 @@ test('PostgreSQL: 실제 마이그레이션·시간 제약·권한·요청 제�
   await db.exec('set role anon');
   await assert.rejects(db.query('select * from notebook_users'),e=>e.code==='42501');
   await assert.rejects(db.query('select * from notebook_schedules'),e=>e.code==='42501');
+  for(const table of ['notebook_google_connections','notebook_google_states','notebook_google_events','notebook_owner_identity','notebook_login_states'])await assert.rejects(db.query(`select * from ${table}`),e=>e.code==='42501');
+  await assert.rejects(db.query("select notebook_finish_owner_login('sub','email',null,'a','b','c','d')"),e=>e.code==='42501');
+  await assert.rejects(db.query("select notebook_google_operation($1,'no-session','status','{}')",[a]),e=>e.code==='42501');
   await assert.rejects(db.query('select notebook_take_attempt($1,2)',['a'.repeat(64)]),e=>e.code==='42501');
   await db.exec('reset role; set role service_role');
   assert.equal((await db.query('select count(*)::int as n from notebook_schedules')).rows[0].n,3);

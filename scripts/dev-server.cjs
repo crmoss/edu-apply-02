@@ -2,25 +2,27 @@
 const http=require('node:http');
 const fs=require('node:fs');
 const path=require('node:path');
-const {randomBytes}=require('node:crypto');
 const {createLocalDatabase}=require('../server/local-database.cjs');
 const {createHandler}=require('../api/notebook.js');
+const {createGoogleHandler}=require('../api/google-calendar.js');
+const {createLoginHandler}=require('../api/google-login.js');
 const root=path.join(__dirname,'..');
-const publicFiles={'/':'index.html','/index.html':'index.html','/style.css':'style.css','/logic.js':'logic.js','/app.js':'app.js','/signup.js':'signup.js','/client-api.js':'client-api.js'};
+const publicFiles={'/':'index.html','/index.html':'index.html','/style.css':'style.css','/logic.js':'logic.js','/app.js':'app.js','/auth.js':'auth.js','/client-api.js':'client-api.js','/google-calendar-client.js':'google-calendar-client.js'};
 const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'application/javascript; charset=utf-8'};
-async function createDevelopmentServer({port=3000,dataDir=path.join(root,'.local-db')}={}){
+async function createDevelopmentServer({port=3000,dataDir=path.join(root,'.local-db'),googleConfig={},authConfig={},googleFetch,verifyIdToken,initializeDatabase}={}){
  const store=await createLocalDatabase(dataDir);
- let handler;
+ if(initializeDatabase)await initializeDatabase(store.database);
+ let handler,googleHandler,loginHandler;
  const server=http.createServer(async(req,res)=>{
   res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');
   try{
    const url=new URL(req.url,'http://127.0.0.1');
-   if(url.pathname==='/api/notebook'){
+   if(['/api/notebook','/api/google-calendar','/api/google-login'].includes(url.pathname)){
     const chunks=[];let bytes=0;
     for await(const chunk of req){bytes+=chunk.length;if(bytes>262144){res.writeHead(413,{'Content-Type':'application/json'});res.end(JSON.stringify({error:'요청이 너무 큽니다.'}));return;}chunks.push(chunk);}
     req.body=Buffer.concat(chunks).toString('utf8')||{};req.query=Object.fromEntries(url.searchParams);
     res.status=function(status){this.statusCode=status;return this;};res.json=function(body){this.setHeader('Content-Type','application/json; charset=utf-8');this.end(JSON.stringify(body));};
-    await handler(req,res);return;
+    await (url.pathname==='/api/notebook'?handler:url.pathname==='/api/google-calendar'?googleHandler:loginHandler)(req,res);return;
    }
    if(!['GET','HEAD'].includes(req.method)||!publicFiles[url.pathname]){res.writeHead(404);res.end('Not found');return;}
    const file=publicFiles[url.pathname];let content=fs.readFileSync(path.join(root,file));
@@ -30,7 +32,9 @@ async function createDevelopmentServer({port=3000,dataDir=path.join(root,'.local
  });
  await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(port,'127.0.0.1',resolve);}).catch(async e=>{await store.close();throw e;});
  const origin=`http://127.0.0.1:${server.address().port}`;
- handler=createHandler({database:store.database,localOrigin:origin,localRateSecret:randomBytes(32).toString('hex')});
+ handler=createHandler({database:store.database,localOrigin:origin,ownerConfig:authConfig});
+ googleHandler=createGoogleHandler({database:store.database,localOrigin:origin,config:googleConfig,ownerConfig:authConfig,...(googleFetch?{fetchGoogle:googleFetch}:{}),verifyIdToken});
+ loginHandler=createLoginHandler({database:store.database,localOrigin:origin,config:authConfig,...(googleFetch?{fetchGoogle:googleFetch}:{}),verifyIdToken});
  return {origin,close:async()=>{server.closeIdleConnections();await new Promise((resolve,reject)=>server.close(e=>e?reject(e):resolve()));await store.close();}};
 }
 if(require.main===module){

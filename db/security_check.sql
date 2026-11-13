@@ -4,13 +4,15 @@
 select tablename, rowsecurity
 from pg_tables
 where schemaname='public'
-  and tablename in ('notebook_users','notebook_sessions','notebook_schedules','notebook_auth_attempts')
+  and tablename in ('notebook_users','notebook_sessions','notebook_schedules','notebook_auth_attempts',
+   'notebook_google_connections','notebook_google_states','notebook_google_events','notebook_owner_identity','notebook_login_states')
 order by tablename;
 
 select table_name, grantee, privilege_type
 from information_schema.role_table_grants
 where table_schema='public'
-  and table_name in ('notebook_users','notebook_sessions','notebook_schedules','notebook_auth_attempts')
+  and table_name in ('notebook_users','notebook_sessions','notebook_schedules','notebook_auth_attempts',
+   'notebook_google_connections','notebook_google_states','notebook_google_events','notebook_owner_identity','notebook_login_states')
 order by table_name, grantee, privilege_type;
 
 select p.proname, p.prosecdef as security_definer, p.proconfig,
@@ -18,4 +20,4 @@ select p.proname, p.prosecdef as security_definer, p.proconfig,
        has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated_execute,
        has_function_privilege('service_role',p.oid,'EXECUTE') as service_role_execute
 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
-where n.nspname='public' and p.proname='notebook_take_attempt';
+where n.nspname='public' and p.proname in ('notebook_take_attempt','notebook_google_operation','notebook_finish_owner_login');

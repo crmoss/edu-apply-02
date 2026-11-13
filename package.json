@@ -12,5 +12,8 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.10"
+  },
+  "dependencies": {
+    "google-auth-library": "^11.3.4"
   }
 }

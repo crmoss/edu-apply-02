@@ -2,7 +2,7 @@
 const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path'),assert=require('node:assert/strict');
 const read=name=>fs.readFileSync(path.join(__dirname,name),'utf8');
 async function main(){
- const rules=vm.createContext({});vm.runInContext(read('logic.js')+'\n'+read('tests.js'),rules);
+ const rules=vm.createContext({});vm.runInContext(read('logic.js')+'\n'+read('tests/rules.js'),rules);
  const results=vm.runInContext('testResults',rules);for(const r of results)assert.equal(r.ok,true,r.label);
  const nodes=new Map();
  for(const match of read('index.html').matchAll(/id="([^"]+)"/g))nodes.set(match[1],{
@@ -14,8 +14,7 @@ async function main(){
  let rows=[],signedIn=false,nextError=null;const calls=[];
  const api={async request(action,body){
   calls.push({action,body});if(nextError){const error=nextError;nextError=null;throw error;}
-  if(action==='session'){const e=new Error('로그인 필요');e.status=401;throw e;}
-  if(action==='signup'||action==='login'){signedIn=true;return {user:{id:'account-a',phone:'010-****-0000'}};}
+  if(action==='session'){if(signedIn)return {user:{id:'account-a',email:'paran95@gmail.com'}};const e=new Error('로그인 필요');e.status=401;throw e;}
   if(action==='logout'){signedIn=false;return {ok:true};}
   assert.ok(signedIn,'인증 뒤 API 접근');
   if(action==='list')return {schedules:structuredClone(rows)};
@@ -26,22 +25,20 @@ async function main(){
  }};
  const legacy=[{id:'old',category:'work',date:'2026-10-21',start:'07:00',end:'07:30',content:'이전 일정'}];
  const local=new Map([['online-work-notebook.standalone.v1',JSON.stringify(legacy)]]);
- const ctx=vm.createContext({console,NotebookAPI:api,crypto:require('node:crypto').webcrypto,
-  document:{getElementById:id=>nodes.get(id),querySelectorAll:()=>[]},window:{addEventListener(){}},
+ const ctx=vm.createContext({console,NotebookAPI:api,crypto:require('node:crypto').webcrypto,URL,AbortSignal,Response,
+  fetch:async()=>new Response(JSON.stringify({configured:true,url:'https://accounts.google.com/o/oauth2/v2/auth?state=fake'})),
+  document:{getElementById:id=>nodes.get(id),querySelectorAll:()=>[]},window:{addEventListener(){},location:{href:'https://example.test/',assign(){}},history:{replaceState(){}}},
   localStorage:{getItem:key=>local.get(key)??null,setItem(){throw Error('온라인 모드에서 로컬 저장 금지');}}
  });
- vm.runInContext(read('logic.js')+'\n'+read('app.js')+'\n'+read('signup.js'),ctx);
+ vm.runInContext(read('logic.js')+'\n'+read('app.js')+'\n'+read('auth.js'),ctx);
  const run=code=>vm.runInContext(code,ctx);await new Promise(resolve=>setImmediate(resolve));
  assert.equal(nodes.get('submitBtn').disabled,true,'로그인 전 저장 불가');
  assert.equal(run('schedules.length'),0,'로컬 일정을 로그인 전 표시하지 않음');
- nodes.get('openSignup').handlers.click();nodes.get('registerTab').onclick();
- nodes.get('signupPhone').value='010-0000-0000';nodes.get('signupPassword').value='sample-password-123';nodes.get('signupPasswordConfirm').value='mismatch';
- await nodes.get('signupForm').handlers.submit({preventDefault(){}});
- assert.equal(calls.filter(c=>c.action==='signup').length,0,'비밀번호 확인 오류');
- nodes.get('signupPasswordConfirm').value='sample-password-123';
- await nodes.get('signupForm').handlers.submit({preventDefault(){}});
+ assert.ok(!nodes.has('signupPhone')&&!nodes.has('signupPassword'),'전화번호·비밀번호 입력 제거');
+ nodes.get('openLogin').handlers.click();await nodes.get('authSubmit').onclick();
+ signedIn=true;await run('initializeAccount()');
  assert.equal(run('currentUser.id'),'account-a');assert.equal(nodes.get('submitBtn').disabled,false);
- assert.equal(nodes.get('signupPassword').value,'','인증 후 비밀번호 지우기');
+ assert.equal(nodes.get('accountEmail').textContent,'paran95@gmail.com','본인 구글 계정 표시');
  assert.equal(nodes.get('legacyImport').hidden,false,'기존 일정 가져오기 안내');
  async function submit(content='오늘 일정',start='09:00',end='09:30'){
   nodes.get('date').value=run('today()');nodes.get('category').value='work';nodes.get('content').value=content;
@@ -59,6 +56,6 @@ async function main(){
  nodes.get('upcomingList').handlers.click({target:{closest:()=>({dataset:{cancel:rows[0].id}})}});
  await nodes.get('confirmCancel').onclick();assert.equal(rows.length,0);
  await nodes.get('logoutButton').onclick();assert.equal(run('currentUser'),null);assert.equal(run('schedules.length'),0);assert.equal(nodes.get('submitBtn').disabled,true);
- console.log(`PASS: ${results.length} rules; signup/login, password confirmation, DB CRUD, failure preservation, D-day colors, import, logout clearing.`);
+ console.log(`PASS: ${results.length} rules; owner Google login UI, DB CRUD, failure preservation, D-day colors, import, logout clearing.`);
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});

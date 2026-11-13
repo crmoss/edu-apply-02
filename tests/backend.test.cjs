@@ -2,14 +2,6 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const core=require('../server/core.cjs');
 const handler=require('../api/notebook.js');
-test('전화번호 정규화와 잘못된 형식',()=>{
- assert.equal(core.phoneNumber('010-0000-0000'),'01000000000');assert.equal(core.phoneNumber('+82 10 0000 0000'),'01000000000');
- assert.throws(()=>core.phoneNumber('abc01000000000'));assert.throws(()=>core.phoneNumber('01000'));
-});
-test('비밀번호 솔트·해시·검증',async()=>{
- const password='example-password-123',hash=await core.hashPassword(password),other=await core.hashPassword(password);
- assert.notEqual(hash,other);assert.ok(!hash.includes(password));assert.equal(await core.verifyPassword(password,hash),true);assert.equal(await core.verifyPassword('wrong-password-123',hash),false);assert.throws(()=>core.passwordValid('short'));
-});
 test('서버 일정 검증은 클라이언트와 독립적으로 동작',()=>{
  const input={category:'work',date:'2028-02-29',start:'09:00',end:'09:30',content:' 일정 '};
  assert.equal(core.scheduleInput(input).content,'일정');
@@ -20,7 +12,8 @@ test('API: 미설정·CSRF·인증·권한·버전·충돌·로그아웃',async(
  const requests=[];
  const userA='11111111-1111-4111-8111-111111111111',id='22222222-2222-4222-8222-222222222222';
  let fake=(url,options)=>{
-  if(url.includes('notebook_sessions?'))return new Response(JSON.stringify([{user_id:userA}]));
+  if(url.includes('notebook_sessions?'))return new Response(JSON.stringify([{user_id:userA,google_subject:'owner-subject'}]));
+  if(url.includes('notebook_owner_identity?'))return new Response(JSON.stringify([{user_id:userA,google_sub:'owner-subject',email:'paran95@gmail.com'}]));
   if(url.includes('notebook_schedules?'))return new Response('[]');
   return new Response(null,{status:204});
  };
@@ -40,8 +33,8 @@ test('API: 미설정·CSRF·인증·권한·버전·충돌·로그아웃',async(
   const update={id,version:3,category:'work',date:'2026-10-21',start:'09:00',end:'09:30',content:'일정',user_id:'attacker'};
   const stale=await call('update',{body:update});assert.equal(stale.status,409);
   const request=requests.findLast(r=>r.options.method==='PATCH');assert.ok(request.url.includes(`user_id=eq.${userA}`));assert.ok(request.url.includes('version=eq.3'));assert.ok(!JSON.parse(request.options.body).user_id);
-  fake=url=>url.includes('notebook_sessions?')?new Response(JSON.stringify([{user_id:userA}])):new Response(JSON.stringify({code:'23P01'}),{status:409});
+  fake=url=>url.includes('notebook_sessions?')?new Response(JSON.stringify([{user_id:userA,google_subject:'owner-subject'}])):url.includes('notebook_owner_identity?')?new Response(JSON.stringify([{user_id:userA,google_sub:'owner-subject',email:'paran95@gmail.com'}])):new Response(JSON.stringify({code:'23P01'}),{status:409});
   assert.equal((await call('create',{body:update})).status,409,'DB 중복 제약 오류 변환');
-  fake=()=>new Response(null,{status:204});const out=await call('logout');assert.equal(out.status,200);assert.ok(out.headers['Set-Cookie'].includes('Max-Age=0'));assert.ok(out.headers['Set-Cookie'].includes('HttpOnly'));assert.ok(out.headers['Set-Cookie'].includes('Secure'));
+  fake=()=>new Response(null,{status:204});const out=await call('logout');assert.equal(out.status,200);assert.ok(out.headers['Set-Cookie'][0].includes('Max-Age=0'));assert.ok(out.headers['Set-Cookie'][0].includes('HttpOnly'));assert.ok(out.headers['Set-Cookie'][0].includes('Secure'));
  }finally{global.fetch=originalFetch;for(const key of Object.keys(process.env))if(!(key in original))delete process.env[key];Object.assign(process.env,original);}
 });

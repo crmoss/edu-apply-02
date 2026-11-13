@@ -13,8 +13,8 @@
 <a class="brand" href="#main" aria-label="온라인 업무 수첩 홈"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" width="32" height="32" fill="none"><rect x="7" y="5" width="19" height="23" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M12 5v23M4 11h6M4 17h6M4 23h6M16 12h6M16 17h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><span>온라인 업무 수첩</span></a>
 <nav class="site-nav" aria-label="주 메뉴"><a href="#upcomingSection">D-day</a><a href="#calendarSection">일정 현황</a><a href="#formSection">일정 등록</a><a href="#listSection">등록 목록</a></nav>
 <span class="badge storage-badge" id="storageBadge">로그인 필요</span>
-<span id="accountPhone" class="account-phone" hidden></span>
-<button id="openSignup" class="signup-trigger" type="button" aria-haspopup="dialog">로그인 / 가입</button>
+<span id="accountEmail" class="account-email" hidden></span>
+<button id="openLogin" class="login-trigger" type="button" aria-haspopup="dialog">구글 로그인</button>
 <button id="logoutButton" type="button" hidden>로그아웃</button>
 </div></header>
 <main class="page" id="main" tabindex="-1">
@@ -23,6 +23,8 @@
 <div id="accountPanel" class="account-panel"><p id="accountMessage" role="status">연결 확인 중…</p><div id="legacyImport" hidden><p id="legacyImportInfo"></p><button id="importSchedules" type="button">기존 브라우저 일정을 내 계정으로 가져오기</button></div></div>
 <div class="panel-head"><h2 id="upcomingHeading">7일 이내 처리할 일정</h2><span id="upcomingCount" class="badge" aria-live="polite"></span></div>
 <p id="upcomingDescription" class="description"></p>
+<div id="googlePanel" class="google-panel" hidden><div class="google-toolbar"><button id="googleManage" type="button" disabled>구글 캘린더 연결 설정</button><button id="googleSync" type="button" hidden>구글 일정 새로고침</button></div><p id="googleStatus" role="status"></p><p id="googleRange"></p><p id="googleMessage" role="status"></p></div>
+<p id="googleCallbackMessage" class="description" role="status"></p>
 <div id="upcomingList" class="upcoming-list"></div>
 </section>
 <section id="calendarSection" class="panel" aria-labelledby="calendarHeading">
@@ -50,23 +52,26 @@
 </main>
 <footer class="site-footer"><div class="footer-inner"><span>온라인 업무 수첩</span><a href="#main">맨 위로 <span aria-hidden="true">↑</span></a></div></footer>
 <dialog id="cancelDialog" aria-labelledby="cancelHeading"><h2 id="cancelHeading">일정을 취소할까요?</h2><p id="cancelDescription"></p><div class="dialog-actions"><button id="keepSchedule">돌아가기</button><button id="confirmCancel" class="danger">일정 취소</button></div></dialog>
-<dialog id="signupDialog" class="signup-dialog" aria-labelledby="signupHeading" aria-describedby="signupNotice">
-<div class="signup-heading"><span class="badge">나의 업무 수첩</span><button id="closeSignup" type="button" aria-label="로그인 창 닫기">닫기</button></div>
-<h2 id="signupHeading">로그인</h2>
-<div class="view-switch auth-tabs" role="group" aria-label="계정 메뉴"><button id="loginTab" type="button" aria-pressed="true">로그인</button><button id="registerTab" type="button" aria-pressed="false">회원가입</button></div>
-<p id="signupNotice" class="signup-notice">휴대폰 번호를 아이디로 사용합니다. 문자 발송이나 번호 소유자 인증은 하지 않습니다. 본인 소유 번호를 사용하고 비밀번호를 안전하게 보관해 주세요. 자동 비밀번호 찾기는 제공하지 않습니다.</p>
-<form id="signupForm" novalidate>
-<div class="field"><label for="signupPhone">휴대폰 번호</label><input id="signupPhone" type="tel" inputmode="tel" maxlength="16" placeholder="010-0000-0000" autocomplete="username" required></div>
-<div class="field"><label for="signupPassword">비밀번호</label><input id="signupPassword" type="password" minlength="12" maxlength="128" autocomplete="current-password" required><p class="signup-hint">12~128자. 다른 사이트와 다른 비밀번호를 사용해 주세요.</p></div>
-<div id="passwordConfirmField" class="field" hidden><label for="signupPasswordConfirm">비밀번호 확인</label><input id="signupPasswordConfirm" type="password" minlength="12" maxlength="128" autocomplete="new-password"></div>
-<p id="signupError" class="message error" role="alert" hidden></p>
-<button id="authSubmit" class="primary signup-submit" type="submit">로그인</button>
-</form>
-<p class="signup-privacy">가입하면 휴대폰 번호와 비밀번호 해시가 DB에 저장됩니다. 비밀번호 원문은 저장하지 않습니다. 기존 브라우저 일정은 가져오기 버튼을 누른 경우에만 현재 계정으로 복사합니다.</p>
+<dialog id="loginDialog" class="login-dialog" aria-labelledby="loginHeading" aria-describedby="loginNotice">
+<div class="login-heading"><span class="badge">나의 업무 수첩</span><button id="closeLogin" type="button" aria-label="로그인 창 닫기">닫기</button></div>
+<h2 id="loginHeading">로그인</h2>
+<p id="loginNotice" class="login-notice">본인 구글 계정으로만 이용하는 개인 업무 수첩입니다. 구글 화면에서 계정을 선택해 로그인해 주세요.</p>
+<p id="loginError" class="message error" role="alert" hidden></p>
+<button id="authSubmit" class="primary login-submit" type="button" disabled>구글 계정으로 로그인</button>
+<p class="login-privacy">로그인은 24시간 유지됩니다. 캘린더 일정 조회는 로그인 후 별도로 연결할 수 있습니다.</p>
+</dialog>
+<dialog id="googleDialog" aria-labelledby="googleHeading">
+<div class="login-heading"><h2 id="googleHeading">구글 캘린더 연결</h2><button id="googleClose" type="button">닫기</button></div>
+<p>선택한 캘린더의 제목과 날짜·시간을 업무 수첩 DB에 저장해 표시합니다. 구글 일정 수정·삭제 권한은 요청하지 않습니다. 연결은 업무 수첩 로그아웃 후에도 유지됩니다.</p>
+<form id="googleConnectForm"><p>로그인한 본인 구글 계정에서 캘린더 읽기 권한을 허용해 주세요.</p><button id="googleConnectSubmit" class="primary" type="submit">구글 캘린더 연결</button></form>
+<form id="googleChoicesForm" hidden><p>최대 3개를 선택하고 업무·개인 분류를 지정하세요. 수정은 구글 캘린더에서 진행합니다.</p><div id="googleChoices"></div><button id="googleChoicesSubmit" type="submit" disabled>선택 저장·일정 가져오기</button></form>
+<p id="googleDialogMessage" role="status"></p>
+<label class="google-remove"><input id="googleRemoveEvents" type="checkbox" checked> 연결 해제 시 가져온 일정도 삭제</label><button id="googleDisconnect" class="danger" type="button" hidden>연결 해제</button>
 </dialog>
 <script src="client-api.js"></script>
 <script src="logic.js"></script>
 <script src="app.js"></script>
-<script src="signup.js"></script>
+<script src="google-calendar-client.js"></script>
+<script src="auth.js"></script>
 </body>
 </html>

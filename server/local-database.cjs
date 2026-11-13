@@ -5,8 +5,13 @@ const path=require('node:path');
 const {AppError}=require('./core.cjs');
 const tables={
  notebook_users:['id','phone','password_hash','created_at'],
- notebook_sessions:['token_hash','user_id','expires_at','created_at'],
- notebook_schedules:['id','user_id','category','schedule_date','start_minute','end_minute','content','version','created_at','updated_at']
+ notebook_sessions:['token_hash','user_id','expires_at','created_at','auth_provider','google_subject'],
+ notebook_schedules:['id','user_id','category','schedule_date','start_minute','end_minute','content','version','created_at','updated_at'],
+ notebook_google_connections:['user_id','status','refresh_ciphertext','revision','selected','last_synced','last_attempt','lease','range_start','range_end'],
+ notebook_google_events:['user_id','calendar_id','event_id','payload'],
+ notebook_google_states:['state_hash','user_id','session_hash','expires_at','claimed','nonce_hash'],
+ notebook_owner_identity:['singleton','user_id','google_sub','email','created_at'],
+ notebook_login_states:['state_hash','browser_hash','nonce_hash','verifier','expires_at','claimed']
 };
 // PGlite의 Date 객체를 Supabase REST와 동일한 날짜 문자열로 변환한다.
 const normalizeRows=rows=>rows.map(row=>Object.fromEntries(Object.entries(row).map(([key,value])=>[key,value instanceof Date?(key==='schedule_date'?value.toISOString().slice(0,10):value.toISOString()):value])));
@@ -19,9 +24,15 @@ async function createLocalDatabase(dataDir){
   await pg.exec('create schema if not exists extensions; create role anon; create role authenticated; create role service_role bypassrls; grant usage on schema public to anon,authenticated,service_role;');
   await pg.exec(fs.readFileSync(path.join(__dirname,'../db/001_initial.sql'),'utf8'));
  }
+ const googleExists=(await pg.query("select to_regclass('public.notebook_google_connections') as existing")).rows[0].existing;
+ if(!googleExists)await pg.exec(fs.readFileSync(path.join(__dirname,'../db/002_google_calendar.sql'),'utf8'));
+ const ownerExists=(await pg.query("select to_regclass('public.notebook_owner_identity') as existing")).rows[0].existing;
+ if(!ownerExists)await pg.exec(fs.readFileSync(path.join(__dirname,'../db/003_owner_google_login.sql'),'utf8'));
  async function database(target,{method='GET',body,prefer=''}={}){
   try{
    if(target==='rpc/notebook_take_attempt')return (await pg.query('select public.notebook_take_attempt($1,$2) as allowed',[body.p_key,body.p_limit])).rows[0].allowed;
+   if(target==='rpc/notebook_google_operation')return (await pg.query('select public.notebook_google_operation($1,$2,$3,$4::jsonb) as result',[body.p_user,body.p_session,body.p_op,JSON.stringify(body.p_data||{})])).rows[0].result;
+   if(target==='rpc/notebook_finish_owner_login')return (await pg.query('select public.notebook_finish_owner_login($1,$2,$3,$4,$5,$6,$7) as result',[body.p_subject,body.p_email,body.p_existing_user,body.p_token_hash,body.p_old_token_hash,body.p_state_hash,body.p_browser_hash])).rows[0].result;
    const [table,query='']=target.split('?');const columns=tables[table];if(!columns)throw Error('Unknown local table');
    const params=new URLSearchParams(query),values=[];
    const identifier=name=>{if(!columns.includes(name))throw Error('Unknown local column');return `"${name}"`;};
@@ -30,8 +41,8 @@ async function createLocalDatabase(dataDir){
    const conditions=[];
    for(const [key,value] of params){
     if(['select','order','limit','offset'].includes(key))continue;
-    const match=/^(eq|gt)\.(.*)$/.exec(value);if(!match)throw Error('Unsupported local filter');
-    conditions.push(`${identifier(key)} ${match[1]==='eq'?'=':'>'} ${parameter(match[2])}`);
+    const match=/^(eq|gt|lt)\.(.*)$/.exec(value);if(!match)throw Error('Unsupported local filter');
+    conditions.push(`${identifier(key)} ${{eq:'=',gt:'>',lt:'<'}[match[1]]} ${parameter(match[2])}`);
    }
    const where=conditions.length?' where '+conditions.join(' and '):'';
    if(method==='GET'){

@@ -2,10 +2,10 @@
 const KEY='online-work-notebook.standalone.v1', $=id=>document.getElementById(id);
 const esc=v=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>globalThis.crypto?.randomUUID?.()||`${Date.now()}-${Math.random().toString(36).slice(2)}`;
-let schedules=[],anchor=today(),view='week',editingId=null,editingVersion=null,pendingCancel=null,pendingCancelVersion=null,storageHealthy=false,navSelection='currentPeriod',currentUser=null,busy=false;
+let schedules=[],externalEvents=[],anchor=today(),view='week',editingId=null,editingVersion=null,pendingCancel=null,pendingCancelVersion=null,storageHealthy=false,navSelection='currentPeriod',currentUser=null,busy=false;
 function message(text,error=false){$('formMessage').textContent=text;$('formMessage').classList.remove('hidden');$('formMessage').classList.toggle('error',error)}
 function updateSaveButton(){ $('submitBtn').disabled=busy||!currentUser||!storageHealthy; }
-function setCurrentUser(user){currentUser=user;schedules=[];storageHealthy=false;resetForm();$('cancelDialog').close();$('formMessage').classList.add('hidden');$('storageBadge').textContent=user?'DB 조회 중':'로그인 필요';updateSaveButton();render();if(typeof updateAuthUI==='function')updateAuthUI();}
+function setCurrentUser(user){currentUser=user;schedules=[];externalEvents=[];storageHealthy=false;resetForm();$('cancelDialog').close();$('formMessage').classList.add('hidden');$('storageBadge').textContent=user?'DB 조회 중':'로그인 필요';updateSaveButton();render();if(typeof updateAuthUI==='function')updateAuthUI();if(typeof googleAccountChanged==='function')googleAccountChanged();}
 async function refresh(){
  const userId=currentUser?.id;if(!userId){updateSaveButton();return false;}
  try{const data=await NotebookAPI.request('list');if(currentUser?.id!==userId)return false;readData(JSON.stringify(data.schedules));schedules=data.schedules;storageHealthy=true;$('storageBadge').textContent='온라인 DB 연결';updateSaveButton();return true;}
@@ -27,14 +27,15 @@ async function save(next){
 }
 function period(){if(view==='week'){const first=sunday(anchor);return {first,last:addDays(first,6)}}const d=parseDate(anchor);d.setDate(1);const first=localDate(d);d.setMonth(d.getMonth()+1,0);return {first,last:localDate(d)}}
 function selectPeriodForAnchor(){const {first,last}=period();navSelection=today()<first?'nextPeriod':today()>last?'prevPeriod':'currentPeriod'}
-function actions(s){return `<div class="item-actions"><button data-edit="${esc(s.id)}" aria-label="일정 변경">변경</button><button class="danger" data-cancel="${esc(s.id)}" aria-label="일정 취소">취소</button></div>`}
-function card(s){return `<article class="booking ${s.category==='personal'?'personal':''}"><div class="booking-time">${s.start} ~ ${s.end}</div><p class="booking-title" data-content="${esc(s.id)}"></p><div class="booking-category">${categoryName(s.category)}</div>${actions(s)}</article>`}
+function actions(s){return s.source==='google'?'<span class="google-source">구글 · 읽기 전용</span>':`<div class="item-actions"><button data-edit="${esc(s.id)}" aria-label="일정 변경">변경</button><button class="danger" data-cancel="${esc(s.id)}" aria-label="일정 취소">취소</button></div>`}
+function card(s){return `<article class="booking ${s.category==='personal'?'personal':''}"><div class="booking-time">${esc(s.displayTime||`${s.start} ~ ${s.end}`)}</div><p class="booking-title" data-content="${esc(s.id)}"></p><div class="booking-category">${categoryName(s.category)}${s.source==='google'?' · '+esc(s.calendarName):''}</div>${actions(s)}</article>`}
+function displaySchedules(first,last){return schedules.concat(typeof googleDisplayEvents==='function'?googleDisplayEvents(externalEvents,first,last):[]);}
 function ddayBadge(date,base){
  const days=daysUntil(date,base),tone=days===0?'due-today':days>0&&days<=7?'due-soon':days<0?'due-past':'';
  return `<span class="dday-badge ${tone}">${ddayLabel(date,base)}</span>`;
 }
 function renderUpcoming(base){
- const items=upcomingSchedules(schedules,base);
+ const items=upcomingSchedules(displaySchedules(base,addDays(base,7)),base);
  $('upcomingCount').textContent=`${items.length}건`;
  $('upcomingDescription').textContent=`${base} ~ ${addDays(base,7)} · 전체 일정`;
  $('upcomingList').innerHTML=!currentUser?'<p class="upcoming-empty">로그인하면 나의 D-day 일정을 확인할 수 있습니다.</p>':!storageHealthy?'<p class="upcoming-empty">DB 일정을 조회하지 못했거나 조회 중입니다. 다시 조회해 주세요.</p>':items.length?items.map(s=>`<div class="upcoming-item ${s.category==='personal'?'upcoming-personal':'upcoming-work'}"><div class="upcoming-meta">${ddayBadge(s.date,base)}<span>${s.date}</span></div>${card(s)}</div>`).join(''):'<p class="upcoming-empty">오늘부터 7일 이내에 처리할 일정이 없습니다.</p>';
@@ -43,7 +44,7 @@ function render(){
  const base=today();
  renderUpcoming(base);
  const {first,last}=period(),filter=$('categoryFilter').value;
- const items=schedules.filter(s=>s.date>=first&&s.date<=last&&(filter==='all'||s.category===filter)).sort((a,b)=>a.date.localeCompare(b.date)||a.start.localeCompare(b.start));
+ const items=displaySchedules(first,last).filter(s=>s.date>=first&&s.date<=last&&(filter==='all'||s.category===filter)).sort((a,b)=>a.date.localeCompare(b.date)||a.start.localeCompare(b.start));
  $('calendarHeading').textContent=view==='week'?'주간 일정 현황':'월간 일정 현황';
  $('periodTitle').textContent=view==='week'?`${first} ~ ${last}`:`${Number(first.slice(0,4))}년 ${Number(first.slice(5,7))}월`;
  for(const [id,label] of [['prevPeriod','이전'],['currentPeriod','이번'],['nextPeriod','다음']]){$(id).textContent=label+(view==='week'?' 주':' 달');$(id).classList.toggle('selected',navSelection===id);$(id).setAttribute('aria-pressed',String(navSelection===id))}
@@ -63,8 +64,8 @@ function render(){
   let html='';for(let i=0;i<total;i++){if(i%7===0)html+='<tr>';const d=addDays(gridStart,i),inside=d>=first&&d<=last,dayItems=items.filter(s=>s.date===d);html+=`<td class="${!inside?'outside':d===today()?'today-cell':''}"><p class="day-label ${redDay(i%7)?'red-day':''}">${Number(d.slice(8))}일${d===today()?' · 오늘':''}</p>${inside?dayItems.map(card).join(''):''}</td>`;if(i%7===6)html+='</tr>'}$('calendarBody').innerHTML=html;
  }
  $('listSummary').textContent=`${$('periodTitle').textContent} · ${filter==='all'?'전체 분류':categoryName(filter)} · 총 ${items.length}건`;
- $('scheduleList').innerHTML=items.length?items.map(s=>`<tr><td>${s.date}</td><td>${ddayBadge(s.date,base)}</td><td>${s.start} ~ ${s.end}</td><td>${categoryName(s.category)}</td><td data-content="${esc(s.id)}"></td><td>${actions(s)}</td></tr>`).join(''):'<tr><td colspan="6" class="empty-table">선택한 기간에 등록된 일정이 없습니다. 아래에서 새 일정을 등록해 주세요.</td></tr>';
- const byId=new Map(schedules.map(s=>[s.id,s]));
+ $('scheduleList').innerHTML=items.length?items.map(s=>`<tr><td>${s.date}</td><td>${ddayBadge(s.date,base)}</td><td>${esc(s.displayTime||`${s.start} ~ ${s.end}`)}</td><td>${categoryName(s.category)}</td><td data-content="${esc(s.id)}"></td><td>${actions(s)}</td></tr>`).join(''):'<tr><td colspan="6" class="empty-table">선택한 기간에 등록된 일정이 없습니다. 아래에서 새 일정을 등록해 주세요.</td></tr>';
+ const byId=new Map(items.concat(displaySchedules(base,addDays(base,7))).map(s=>[s.id,s]));
  document.querySelectorAll('[data-content]').forEach(el=>{el.textContent=byId.get(el.dataset.content)?.content||''});
  document.querySelectorAll('[data-edit],[data-cancel]').forEach(el=>{const s=byId.get(el.dataset.edit||el.dataset.cancel);if(s)el.setAttribute('aria-label',`${s.content} 일정 ${el.dataset.edit?'변경':'취소'}`)});
 }

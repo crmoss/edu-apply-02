@@ -3,7 +3,7 @@
   "framework": null,
   "buildCommand": "node build.cjs",
   "outputDirectory": "dist",
-  "functions": { "api/notebook.js": { "maxDuration": 30 } },
+  "functions": { "api/notebook.js": { "maxDuration": 30 }, "api/google-calendar.js": { "maxDuration": 30 }, "api/google-login.js": { "maxDuration": 30 } },
   "headers": [{
     "source": "/(.*)",
     "headers": [
