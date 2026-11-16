@@ -16,6 +16,9 @@ test('PostgreSQL: 실제 마이그레이션·시간 제약·권한·요청 제�
   const b=(await db.query('insert into notebook_users(phone,password_hash) values($1,$2) returning id',['01000000001',hash])).rows[0].id;
   const add=(owner,start,end)=>db.query("insert into notebook_schedules(user_id,category,schedule_date,start_minute,end_minute,content) values($1,'work','2026-10-21',$2,$3,'가상 일정')",[owner,start,end]);
   await add(a,540,600);await add(a,600,630);await add(b,540,600);
+  const upgrade=fs.readFileSync(require('node:path').join(__dirname,'../db/004_continuous_schedules.sql'),'utf8');
+  await db.exec(upgrade);
+  assert.equal((await db.query('select count(*)::int as n from notebook_schedules where end_date=schedule_date')).rows[0].n,3,'existing daily schedules are backfilled');
   await assert.rejects(add(a,570,630),e=>e.code==='23P01','같은 사용자의 중복 범위 차단');
   await assert.rejects(add(a,400,420),e=>e.code==='23514','시간 범위 제한');
   await assert.rejects(db.query('insert into notebook_users(phone,password_hash) values($1,$2)',['01000000000',hash]),e=>e.code==='23505');
@@ -34,5 +37,7 @@ test('PostgreSQL: 실제 마이그레이션·시간 제약·권한·요청 제�
   // 일괄 가져오기는 한 건이라도 시간이 겹치면 전체 요청이 취소된다.
   await assert.rejects(db.query("insert into notebook_schedules(user_id,category,schedule_date,start_minute,end_minute,content) values($1,'work','2026-10-22',540,600,'first'),($1,'personal','2026-10-22',570,630,'second')",[a]),e=>e.code==='23P01');
   assert.equal((await db.query("select count(*)::int as n from notebook_schedules where schedule_date='2026-10-22'")).rows[0].n,0);
+  await db.exec(upgrade);
+  assert.equal((await db.query('select count(*)::int as n from notebook_schedules')).rows[0].n,3,'re-running the range migration preserves records');
  }finally{await db.close();}
 });

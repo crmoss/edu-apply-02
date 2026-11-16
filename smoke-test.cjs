@@ -55,6 +55,24 @@ async function main(){
  await nodes.get('importSchedules').onclick();assert.ok(calls.some(c=>c.action==='import'&&c.body.schedules.length===1));assert.equal(local.size,1);
  nodes.get('upcomingList').handlers.click({target:{closest:()=>({dataset:{cancel:rows[0].id}})}});
  await nodes.get('confirmCancel').onclick();assert.equal(rows.length,0);
+ // 연속 일정은 저장·D-day·목록에서 한 건, 달력에서는 날짜별로 표시한다.
+ nodes.get('categoryFilter').value='all';nodes.get('weekView').onclick();
+ nodes.get('date').value=run('addDays(today(),-1)');nodes.get('endDate').value=run('addDays(today(),2)');
+ nodes.get('content').value='연속 일정';run("setTime('start','18:00');setTime('end','09:00')");
+ await nodes.get('scheduleForm').handlers.submit({preventDefault(){}});
+ assert.equal(rows.length,1);assert.equal(nodes.get('upcomingCount').textContent,'1건');
+ assert.ok(nodes.get('upcomingList').innerHTML.includes('진행 중'));
+ assert.ok(nodes.get('calendarBody').innerHTML.includes('연속 일정'));
+ assert.equal((nodes.get('scheduleList').innerHTML.match(/data-edit=/g)||[]).length,1);
+ const spanId=rows[0].id,originalDate=rows[0].date;
+ nodes.get('calendarBody').handlers.click({target:{closest:()=>({dataset:{edit:spanId}})}});
+ assert.equal(nodes.get('date').value,originalDate);assert.equal(nodes.get('endDate').value,rows[0].endDate);
+ nodes.get('endDate').value=run('addDays(today(),3)');
+ await nodes.get('scheduleForm').handlers.submit({preventDefault(){}});
+ assert.equal(rows[0].id,spanId);assert.equal(rows[0].version,2);assert.equal(rows[0].date,originalDate);
+ nodes.get('calendarBody').handlers.click({target:{closest:()=>({dataset:{cancel:spanId}})}});
+ assert.ok(nodes.get('cancelDescription').textContent.includes('전체'));
+ await nodes.get('confirmCancel').onclick();assert.equal(rows.length,0);
  await nodes.get('logoutButton').onclick();assert.equal(run('currentUser'),null);assert.equal(run('schedules.length'),0);assert.equal(nodes.get('submitBtn').disabled,true);
  console.log(`PASS: ${results.length} rules; owner Google login UI, DB CRUD, failure preservation, D-day colors, import, logout clearing.`);
 }

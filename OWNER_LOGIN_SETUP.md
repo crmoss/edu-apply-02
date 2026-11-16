@@ -47,7 +47,7 @@ Vercel 프로젝트 → Settings → Environment Variables:
 
 ## DB와 배포
 
-새 설치는 `db/001_initial.sql` → `db/002_google_calendar.sql` → **[db/003_owner_google_login.sql](db/003_owner_google_login.sql)** 순서입니다. 기존 설치는 이미 실행한 초기 SQL을 반복하지 말고 적용하지 않은 추가 SQL만 실행합니다.
+새 설치는 `db/001_initial.sql` → `db/002_google_calendar.sql` → **[db/003_owner_google_login.sql](db/003_owner_google_login.sql)** → [db/004_continuous_schedules.sql](db/004_continuous_schedules.sql) 순서입니다. 004는 연속 일정용 종료일과 중복 검사 설정입니다. 기존 설치는 이미 실행한 초기 SQL을 반복하지 말고 적용하지 않은 추가 SQL만 실행합니다.
 
 003은 기존 사용자/일정을 보존하고, 기존 전화번호 방식의 세션과 진행 중 캘린더 인증 요청을 종료합니다. 기존 구글 연결 토큰이 있으면 권한 해제 대기 상태로 바꾸어 재검증 없이 사용하지 못하게 합니다. 본인 구글 로그인 후 연결 설정에서 기존 권한을 해제하고 다시 연결합니다.
 

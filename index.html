@@ -39,12 +39,13 @@
 <form id="scheduleForm" class="form">
 <div class="fields">
 <div class="field category-field"><label for="category">분류</label><select id="category" required><option value="work">업무</option><option value="personal">개인</option></select></div>
-<div class="field date-field"><label for="date">일정 날짜</label><input id="date" type="date" min="0001-01-01" max="9999-12-31" required></div>
+<div class="field date-field"><label for="date">시작일</label><input id="date" type="date" min="0001-01-01" max="9999-12-31" required></div>
+<div class="field date-field"><label for="endDate">종료일</label><input id="endDate" type="date" min="0001-01-01" max="9999-12-31" required></div>
 <div class="field"><label for="startHour">시작 시간</label><div class="time-selects"><select id="startHour" aria-label="시작 시" required></select><select id="startMinute" aria-label="시작 분" required><option value="00">00분</option><option value="30">30분</option></select></div></div>
 <div class="field"><label for="endHour">종료 시간</label><div class="time-selects"><select id="endHour" aria-label="종료 시" required></select><select id="endMinute" aria-label="종료 분" required><option value="00">00분</option><option value="30">30분</option></select></div></div>
 <div class="field content-field"><label for="content">일정 내용</label><input id="content" placeholder="예: 주간 업무 정리, 병원 방문" maxlength="200" required></div>
 </div>
-<div class="form-bottom"><p class="note">07:00~23:00 · 30분 단위 · 시간 중복 불가</p><div class="form-actions"><button id="cancelEdit" class="hidden" type="button">변경 취소</button><button id="submitBtn" class="primary" type="submit">일정 등록</button></div></div>
+<div class="form-bottom"><p class="note">시작·종료 시각 07:00~23:00 · 30분 단위 · 여러 날은 밤 시간도 포함하는 연속 일정</p><div class="form-actions"><button id="cancelEdit" class="hidden" type="button">변경 취소</button><button id="submitBtn" class="primary" type="submit">일정 등록</button></div></div>
 <p id="formMessage" class="message hidden" role="status" aria-live="polite"></p>
 </form>
 </section>

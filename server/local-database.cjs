@@ -6,7 +6,7 @@ const {AppError}=require('./core.cjs');
 const tables={
  notebook_users:['id','phone','password_hash','created_at'],
  notebook_sessions:['token_hash','user_id','expires_at','created_at','auth_provider','google_subject'],
- notebook_schedules:['id','user_id','category','schedule_date','start_minute','end_minute','content','version','created_at','updated_at'],
+ notebook_schedules:['id','user_id','category','schedule_date','end_date','start_minute','end_minute','content','version','created_at','updated_at'],
  notebook_google_connections:['user_id','status','refresh_ciphertext','revision','selected','last_synced','last_attempt','lease','range_start','range_end'],
  notebook_google_events:['user_id','calendar_id','event_id','payload'],
  notebook_google_states:['state_hash','user_id','session_hash','expires_at','claimed','nonce_hash'],
@@ -14,7 +14,7 @@ const tables={
  notebook_login_states:['state_hash','browser_hash','nonce_hash','verifier','expires_at','claimed']
 };
 // PGlite의 Date 객체를 Supabase REST와 동일한 날짜 문자열로 변환한다.
-const normalizeRows=rows=>rows.map(row=>Object.fromEntries(Object.entries(row).map(([key,value])=>[key,value instanceof Date?(key==='schedule_date'?value.toISOString().slice(0,10):value.toISOString()):value])));
+const normalizeRows=rows=>rows.map(row=>Object.fromEntries(Object.entries(row).map(([key,value])=>[key,value instanceof Date?(['schedule_date','end_date'].includes(key)?value.toISOString().slice(0,10):value.toISOString()):value])));
 async function createLocalDatabase(dataDir){
  const {PGlite}=await import('@electric-sql/pglite');
  const {btree_gist}=await import('@electric-sql/pglite/contrib/btree_gist');
@@ -28,6 +28,8 @@ async function createLocalDatabase(dataDir){
  if(!googleExists)await pg.exec(fs.readFileSync(path.join(__dirname,'../db/002_google_calendar.sql'),'utf8'));
  const ownerExists=(await pg.query("select to_regclass('public.notebook_owner_identity') as existing")).rows[0].existing;
  if(!ownerExists)await pg.exec(fs.readFileSync(path.join(__dirname,'../db/003_owner_google_login.sql'),'utf8'));
+ const periodExists=(await pg.query("select 1 from information_schema.columns where table_schema='public' and table_name='notebook_schedules' and column_name='end_date'")).rows.length;
+ if(!periodExists)await pg.exec(fs.readFileSync(path.join(__dirname,'../db/004_continuous_schedules.sql'),'utf8'));
  async function database(target,{method='GET',body,prefer=''}={}){
   try{
    if(target==='rpc/notebook_take_attempt')return (await pg.query('select public.notebook_take_attempt($1,$2) as allowed',[body.p_key,body.p_limit])).rows[0].allowed;

@@ -15,6 +15,7 @@ async function database(path,{method='GET',body,prefer}={}){
  });}catch{throw new AppError(503,'Supabase 서버에 연결하지 못했습니다. 프로젝트가 중지되지 않았는지와 SUPABASE_URL을 확인해 주세요.');}
  if(!response.ok){
   const error=await response.json().catch(()=>({}));
+  if(error.code==='PGRST204'||error.code==='42703')throw new AppError(503,'일정 종료일 DB 설정이 필요합니다. Supabase에서 db/004_continuous_schedules.sql을 실행해 주세요.');
   if(response.status===401)throw new AppError(503,'DB 키 인증에 실패했습니다. URL과 서버용 키가 같은 Supabase 프로젝트의 값인지 확인하고 Vercel에 다시 저장·배포해 주세요.');
   if(error.code==='PGRST202'||error.code==='42883')throw new AppError(503,'DB 함수가 없거나 API에 반영되지 않았습니다. Supabase SQL Editor에서 notebook_take_attempt 함수 생성 여부를 확인해 주세요. [DB_FUNCTION_MISSING]');
   if(error.code==='PGRST205'||error.code==='42P01')throw new AppError(503,'업무 수첩 DB 테이블을 찾지 못했습니다. 현재 프로젝트에 notebook_ 테이블이 생성됐는지 확인해 주세요. [DB_TABLE_MISSING]');

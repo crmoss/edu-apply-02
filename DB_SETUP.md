@@ -4,11 +4,14 @@
 
 ## DB 구성
 
-Supabase 프로젝트의 SQL Editor에서 적용하지 않은 마이그레이션만 순서대로 실행합니다. 새 DB는 다음 세 파일이 모두 필요합니다.
+Supabase 프로젝트의 SQL Editor에서 적용하지 않은 마이그레이션만 순서대로 실행합니다. 새 DB는 다음 네 파일이 모두 필요합니다.
 
 1. [db/001_initial.sql](db/001_initial.sql): 일정·사용자·세션·요청 제한의 기본 구조
 2. [db/002_google_calendar.sql](db/002_google_calendar.sql): 캘린더 연결·일정 캐시와 원자적 갱신
 3. [db/003_owner_google_login.sql](db/003_owner_google_login.sql): 본인 구글 신원·로그인 요청·기존 일정 연결
+4. [db/004_continuous_schedules.sql](db/004_continuous_schedules.sql): 종료일과 밤 시간을 포함하는 연속 일정 중복 검사
+
+**001~003을 이미 실행했다면 이번 변경에는 004만 추가 실행합니다.** Supabase → SQL Editor → New query에서 004 파일의 내용 전체를 붙여 넣고 Run을 누릅니다. 기존 하루 일정의 종료일은 시작일과 같게 채워지며 ID·내용·버전은 유지됩니다. `setup_google_owner.sql`로 로그인 설정을 완료한 경우에도 004를 별도로 실행합니다. 새 환경 변수는 필요하지 않습니다.
 
 이미 적용한 초기 SQL을 반복하거나 중복 오류를 해결하려고 기존 테이블을 삭제하지 않습니다. 사용자·일정 데이터는 보존합니다. 003은 이전 방식의 로그인 세션을 종료합니다. 과거의 전화번호·비밀번호 컬럼은 기존 계정 확인과 이전용이며 현재 인증에는 사용하지 않습니다.
 

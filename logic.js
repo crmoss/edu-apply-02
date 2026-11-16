@@ -21,16 +21,27 @@ function ddayLabel(target,base=today()){
  return days===0?'D-day':days>0?`D-${days}`:`D+${Math.abs(days)}`;
 }
 function upcomingSchedules(items,base=today()){
- return items.filter(s=>{const days=daysUntil(s.date,base);return days>=0&&days<=7})
+ if(!parseDate(base))return [];
+ const limit=addDays(base,7);
+ return items.filter(s=>scheduleEndDate(s)>=base&&s.date<=limit)
   .sort((a,b)=>a.date.localeCompare(b.date)||a.start.localeCompare(b.start));
 }
 
-function overlaps(a,b){return a.date===b.date&&a.start<b.end&&a.end>b.start}
+const scheduleEndDate=s=>s.endDate===undefined?s.date:s.endDate;
+const scheduleDateLabel=s=>scheduleEndDate(s)===s.date?s.date:`${s.date} ~ ${scheduleEndDate(s)}`;
+const scheduleTimeLabel=s=>scheduleEndDate(s)===s.date?`${s.start} ~ ${s.end}`:`${s.date} ${s.start} ~ ${scheduleEndDate(s)} ${s.end}`;
+function overlaps(a,b){return `${a.date}T${a.start}`<`${scheduleEndDate(b)}T${b.end}`&&`${scheduleEndDate(a)}T${a.end}`>`${b.date}T${b.start}`;}
+function schedulesOnDay(items,date){
+ return items.filter(s=>s.date<=date&&scheduleEndDate(s)>=date).map(s=>{
+  if(scheduleEndDate(s)===s.date)return s;
+  return {...s,displayTime:date===s.date?`${s.start} ~ 24:00 · 시작`:date===scheduleEndDate(s)?`00:00 ~ ${s.end} · 종료`:'종일 · 연속 일정'};
+ });
+}
 function readData(raw){
  if(raw===null)return [];
  const data=JSON.parse(raw);if(!Array.isArray(data))throw Error('잘못된 저장 데이터');
  const ids=new Set();
- for(const s of data){if(!s||typeof s.id!=='string'||!s.id||ids.has(s.id)||!['work','personal'].includes(s.category)||!parseDate(s.date)||!validTime(s.start)||!validTime(s.end,true)||s.start>=s.end||minutes(s.start)<420||minutes(s.end)>1380||typeof s.content!=='string'||!s.content.trim()||s.content.length>200)throw Error('잘못된 일정');ids.add(s.id)}
+ for(const s of data){if(!s||typeof s.id!=='string'||!s.id||ids.has(s.id)||!['work','personal'].includes(s.category)||!parseDate(s.date)||!parseDate(scheduleEndDate(s))||scheduleEndDate(s)<s.date||!validTime(s.start)||!validTime(s.end,true)||s.date===scheduleEndDate(s)&&s.start>=s.end||minutes(s.start)<420||minutes(s.start)>1350||minutes(s.end)<450||minutes(s.end)>1380||typeof s.content!=='string'||!s.content.trim()||s.content.length>200)throw Error('잘못된 일정');ids.add(s.id)}
  const sorted=[...data].sort((a,b)=>a.date.localeCompare(b.date)||a.start.localeCompare(b.start));
  for(let i=1;i<sorted.length;i++)if(overlaps(sorted[i-1],sorted[i]))throw Error('중복 일정');
  return data;
